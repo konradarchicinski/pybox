@@ -1,0 +1,28 @@
+name: AnalyticsPy
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.5
+  - pip
+  - ipython
+  - jupyter
+  - jupyterlab
+  - numpy
+  - pyarrow
+  - pytorch
+  - scikit-learn
+  - gensim
+  - scipy
+  - nltk
+  - pandas
+  - numba
+  - flask
+  - bs4
+  - tabulate
+  - tqdm
+  - pip:
+    - pep8
+    - autopep8
+    - torchtext
+  
