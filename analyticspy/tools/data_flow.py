@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-from analyticspy import DATALAKE_PATH
+from analyticspy import DATASTORE_PATH
+from .data import Table
+from .database import create_connection
 
-import analyticspy.tools.data as atd
-import analyticspy.tools.database as atdb
-import pandas as pd
+import pyarrow.parquet as pq
+import numpy as np
 
 
 def read_sql(table, database, database_directory=None):
@@ -20,9 +21,9 @@ def read_sql(table, database, database_directory=None):
     """
 
     if database_directory:
-        conn = atdb.create_connection(database, database_directory)
+        conn = create_connection(database, database_directory)
     else:
-        conn = atdb.create_connection(database)
+        conn = create_connection(database)
 
     c = conn.cursor()
     c.execute(f"SELECT * FROM '{table}'")
@@ -37,58 +38,46 @@ def read_sql(table, database, database_directory=None):
 
     data_types = [(column[1], numpy_type_map[column[2]]) for column in info]
 
-    table = atd.Table()
-    table.data = atd.np.array(data, dtype=data_types)
+    table = Table()
+    table.data = np.array(data, dtype=data_types)
 
     return table
 
 
-def read_file(file_name, extension):
+def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
     """
-    Function uses `Pandas` read family funtions to load particular file
-    as a DataFrame object.
+    Function saves selected `Table` or `TypedTable` object into parquet file.
+    It works based on the `PyArrow` module, firstly transforming `Table` into
+    arrow object and afterwards writing it as a parquet file.
 
     Args:
-        file_name (string): name of the file to be searched for in Data folder.
-        extension (string): extension of a file that will be loaded.
+        table (Table): Table object that will be saved.
+        file_name (str): name under which Table will be saved.
+        directory (str, optional): string containing directory in which Table
+            is going to be saved. Defaults to DATASTORE_PATH.
+    """
+    file_path = f"{directory}{file_name}.parquet"
+    arrow_table = table.to_arrow
+    pq.write_table(arrow_table, file_path)
+
+
+def table_from_parquet(file_name, directory=DATASTORE_PATH):
+    """
+    Function loads particular parquet file as a Table object. It works based
+    on the `PyArrow` module, firstly reading file and storing it as an Arrow
+    object and afterwards transforming it into `Table`.
+
+    Args:
+        file_name (str): name of parquet file which will be load.
+        directory (str, optional): string containing directory in which parquet
+            file is stored. Defaults to DATASTORE_PATH.
+
     Returns:
-        DataFrame: loaded from csv, parquet, "xls", "xlsx" or "xlsm" format.
+        Table: Table object.
     """
+    file_path = f"{directory}{file_name}.parquet"
+    arrow_table = pq.read_table(file_path)
+    data_types = [(data_type.name, "O") for data_type in arrow_table.schema]
+    table = Table(arrow_table.to_pydict(), data_types)
 
-    if extension == "csv":
-        return pd.read_csv(
-            DATALAKE_PATH + f"{file_name}.{extension}"
-        )
-    elif extension == "parquet":
-        return pd.read_parquet(
-            DATALAKE_PATH + f"{file_name}.{extension}"
-        )
-    elif extension in ["xls", "xlsx", "xlsm"]:
-        return pd.read_excel(
-            DATALAKE_PATH + f"{file_name}.{extension}"
-        )
-
-
-def save_file(data_frame, file_name, extension):
-    """
-    Function uses `Pandas` DataFrame.to family functions to save particular
-    DataFrame objext as file in csv, parquet, "xls", "xlsx" or "xlsm" format.
-
-    Args:
-        data_frame (DataFrame): Dataframe object that will be saved.
-        file_name (string): name under which DataFrame will be saved.
-        extension (string): extension of a file that will be saved.
-    """
-
-    if extension == "csv":
-        data_frame.to_csv(
-            DATALAKE_PATH + f"{file_name}.{extension}"
-        )
-    elif extension == "parquet":
-        data_frame.to_parquet(
-            DATALAKE_PATH + f"{file_name}.{extension}"
-        )
-    elif extension in ["xls", "xlsx", "xlsm"]:
-        data_frame.to_excel(
-            DATALAKE_PATH + f"{file_name}.{extension}", sheet_name=file_name
-        )
+    return table

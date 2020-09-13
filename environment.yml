@@ -9,14 +9,13 @@ dependencies:
   - jupyter
   - jupyterlab
   - numpy
+  - numba
   - pyarrow
   - pytorch
   - scikit-learn
   - gensim
   - scipy
   - nltk
-  - pandas
-  - numba
   - flask
   - bs4
   - tabulate
