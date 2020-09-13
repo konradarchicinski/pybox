@@ -5,17 +5,16 @@ import sqlite3
 
 
 def create_connection(database_name, database_directory=DATASTORE_PATH):
-    """
-    Function creates a database connection to a SQLite database. If no database with
-    the given name exists, it will be created.
+    """Function creates a database connection to a SQLite database.
+    If no database with the given name exists, it will be created.
 
     Args:
         database_name (string): database name without file extension.
-        database_directory (string, optional): directory in which database is/would
-        be stored. Defaults to DATA_PATH.
+        database_directory (string, optional): directory in which database
+            is/would be stored. Defaults to DATA_PATH.
 
     Returns:
-        [type]: fucntion returns sqlite database connection.
+        [type]: function returns sqlite database connection.
     """
     database = "".join([database_directory, database_name, ".db"])
 
@@ -31,8 +30,7 @@ def create_connection(database_name, database_directory=DATASTORE_PATH):
 
 
 def check_if_table_exists(connection, table_name):
-    """
-    [summary]
+    """[summary]
 
     Args:
         connection ([type]): [description]

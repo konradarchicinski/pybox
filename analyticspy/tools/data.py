@@ -8,8 +8,7 @@ from IPython.core.display import display, HTML
 
 
 class Table:
-    """
-    [summary]
+    """[summary]
 
     Returns:
         [type]: [description]
@@ -17,8 +16,7 @@ class Table:
     __slots__ = ["data"]
 
     def __init__(self, data=None):
-        """
-        [summary]
+        """[summary]
 
         Args:
             data ([type], optional): [description]. Defaults to None.
@@ -32,8 +30,7 @@ class Table:
             self.data = np.array([])
 
     def __str__(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -48,8 +45,7 @@ class Table:
         )
 
     def __repr__(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -57,7 +53,9 @@ class Table:
         html = "<table>\n<tr>\n<th></th>\n"
 
         for column, type_value in self.data.dtype.fields.items():
-            html = f"{html}<th>{str(column)}<br>{str(type_value[0])}</br></th>\n"
+            html = (
+                f"{html}<th>{str(column)}<br>{str(type_value[0])}</br></th>\n"
+            )
         html = "".join([html, "</tr>\n"])
 
         for idx, row in enumerate(self.data):
@@ -71,8 +69,7 @@ class Table:
         return self.info
 
     def __getitem__(self, selector):
-        """
-        [summary]
+        """[summary]
 
         Args:
             selector ([type]): [description]
@@ -88,8 +85,7 @@ class Table:
             return self.data[selector]
 
     def __setitem__(self, selector, value):
-        """
-        [summary]
+        """[summary]
 
         Args:
             selector ([type]): [description]
@@ -110,8 +106,7 @@ class Table:
 
     @property
     def data_types(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -123,8 +118,7 @@ class Table:
 
     @property
     def length(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -133,8 +127,7 @@ class Table:
 
     @property
     def width(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -143,8 +136,7 @@ class Table:
 
     @property
     def names(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -156,8 +148,7 @@ class Table:
 
     @property
     def to_arrow(self):
-        """
-        [summary]
+        """[summary]
 
         Returns:
             [type]: [description]
@@ -170,6 +161,11 @@ class Table:
 
     @property
     def info(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         info = (
             "Table("
             f"shape=({self.width}x{self.length}),"
@@ -179,8 +175,7 @@ class Table:
         return info
 
     def rows(self, start=None, stop=None):
-        """
-        [summary]
+        """[summary]
 
         Args:
             start ([type], optional): [description]. Defaults to None.
@@ -196,8 +191,7 @@ class Table:
         return (row for row in self.data[start:stop])
 
     def indices(self, start=None, stop=None, step=None):
-        """
-        [summary]
+        """[summary]
 
         Args:
             start ([type], optional): [description]. Defaults to None.
@@ -216,8 +210,7 @@ class Table:
         return range(start, stop, step)
 
     def value_to_list(self, value):
-        """
-        [summary]
+        """[summary]
 
         Args:
             value ([type]): [description]
@@ -230,8 +223,7 @@ class Table:
         return value
 
     def align_length(self, value):
-        """
-        [summary]
+        """[summary]
 
         Args:
             value ([type]): [description]
@@ -243,8 +235,7 @@ class Table:
                 self.data[-1] = tuple([None] * self.width)
 
     def new_column(self, name):
-        """
-        [summary]
+        """[summary]
 
         Args:
             name ([type]): [description]

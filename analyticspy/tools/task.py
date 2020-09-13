@@ -2,17 +2,16 @@
 import ast
 import inspect
 from datetime import datetime
+from .data_flow import table_to_parquet, table_from_parquet
 
 
 class TaskInit:
-    """
-    Task initiation, it is used to define a unique task name.
-    """
+    """Task initiation, it is used to define an unique task name."""
 
     def __init__(self, task_name, task_info):
-        """
-        Initialization of the TaskInit class, it is used to check if the task name
-        supplied by `run_task` script matches the one in the active module.
+        """Initialization of the TaskInit class, it is used to check if the
+        task name supplied by `run_task` script matches the one in the active
+        module.
 
         Args:
             task_name (str): task name registered in the active module.
@@ -28,8 +27,7 @@ class TaskInit:
         self.help_indicator = inspect.stack()[1][0].f_globals["HELP_INDICATOR"]
 
     def add_setting(self, name, value, info):
-        """
-        [summary]
+        """[summary]
 
         Args:
             name ([type]): [description]
@@ -40,8 +38,7 @@ class TaskInit:
         self.task_settings_info[name] = info
 
     def _overwrite_setting(self, setting):
-        """
-        [summary]
+        """[summary]
 
         Args:
             setting ([type]): [description]
@@ -57,44 +54,46 @@ class TaskInit:
                 f"`{setting_name}` has not been found in task settings.")
 
     def _print_help(self):
-        """
-        [summary]
-        """
-        help_string = "".join(
-            ["\nTask Info:", self.task_info, "\nTask setting arguments:\n"])
+        """[summary]"""
+        help_string = "".join(["\nTask Info:", self.task_info])
+
         for name, info in self.task_settings_info.items():
-            help_string = "".join([help_string, "- ", name, " ",
-                                   str(type(self.task_settings[name])),
-                                   info, "- default value: ",
-                                   str(self.task_settings[name]), "\n"
-                                   ])
+            help_string = "".join(
+                [help_string, "\nTask setting arguments:\n- ",
+                 name, " ", str(type(self.task_settings[name])),
+                 info, "- default value: ",
+                 str(self.task_settings[name]), "\n"]
+            )
         print(help_string)
 
-    def run(self, main_function, task_predecessors=None):
-        """
-        Method used to perform the task if an active task was approved after
-        initiation.
+    def run(self, main_function, task_inputs=None, task_outputs=None):
+        """Method used to perform the task if an active task was approved
+        after initiation.
 
         Args:
             main_function (function): name of the main function used in a task.
-            task_predecessors (list, optional): input names which are going to be used
-                in a task. Defaults to None.
+            task_inputs (list, optional): input names which are going to be used
+                in the task. Defaults to None.
+            task_outputs (list, optional): output names which are going to be
+                used in the task. Defaults to None.
         """
         if self.help_indicator:
             self._print_help()
         else:
             # Printing information about starting of the task.
-            print("".join(["-" * 79, "\nTask ",
-                           self.task_name, " started on:\t",
-                           datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                           "\n", "-" * 79
-                           ]))
+            print("".join(
+                ["-" * 79, "\nTask ", self.task_name, " started on:\t",
+                 datetime.now().strftime("%Y/%m/%d, %H:%M:%S"), "\n", "-" * 79]
+            ))
             function_input_list = list()
 
-            if task_predecessors is not None:
-                # TODO write code which will run task predecessors.
+            if task_inputs:
+                # TODO write code which will run task inputs automatically.
                 # It needs to be solved how to handle data flow in that case.
-                function_input_list.extend([])
+                inputs = list()
+                for name in task_inputs:
+                    inputs.append(table_from_parquet(name))
+                function_input_list.extend(*inputs)
 
             if self.task_settings:
                 if self.supplied_settings:
@@ -102,10 +101,15 @@ class TaskInit:
                         self._overwrite_setting(setting)
                 function_input_list.append(self.task_settings)
 
-            main_function(*function_input_list)
+            if task_outputs:
+                outputs = main_function(*function_input_list)
+                for output, name in zip(outputs, task_outputs):
+                    table_to_parquet(output, name)
+            else:
+                main_function(*function_input_list)
+
             # Printing information about ending of the task.
-            print("".join(["-" * 79, "\nTask ",
-                           self.task_name, " ended on:\t\t",
-                           datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                           "\n", "-" * 79
-                           ]))
+            print("".join(
+                ["-" * 79, "\nTask ", self.task_name, " ended on:\t\t",
+                 datetime.now().strftime("%Y/%m/%d, %H:%M:%S"), "\n", "-" * 79]
+            ))

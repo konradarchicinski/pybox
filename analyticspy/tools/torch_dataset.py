@@ -11,13 +11,10 @@ from torchtext.data.utils import ngrams_iterator, get_tokenizer
 
 
 class TextClassificationDataset(Dataset):
-    """
-    Defines an abstract text classification datasets.
-    """
+    """Defines an abstract text classification datasets."""
 
     def __init__(self, vocab, data, labels):
-        """
-        Initiate text-classification dataset.
+        """Initiate text-classification dataset.
 
         Arguments:
             vocab: Vocabulary object used for dataset.
@@ -90,11 +87,13 @@ def setup_datasets(ngrams, vocabulary=None, include_unk=False):
 
     logging.info("Creating training data")
     train_data, train_labels = _create_data_from_iterator(
-        vocabulary, _data_iterator(train_data_rows, ngrams, yield_cls=True), include_unk)
+        vocabulary,
+        _data_iterator(train_data_rows, ngrams, yield_cls=True), include_unk)
 
     logging.info("Creating testing data")
     test_data, test_labels = _create_data_from_iterator(
-        vocabulary, _data_iterator(test_data_rows, ngrams, yield_cls=True), include_unk)
+        vocabulary,
+        _data_iterator(test_data_rows, ngrams, yield_cls=True), include_unk)
 
     if len(train_labels ^ test_labels) > 0:
         raise ValueError("Training and test labels don't match")
@@ -104,8 +103,7 @@ def setup_datasets(ngrams, vocabulary=None, include_unk=False):
 
 
 def _data_iterator(data_rows, ngrams, yield_cls=False):
-    """
-    [summary]
+    """[summary]
 
     Args:
         data_rows ([type]): [description]
@@ -127,8 +125,7 @@ def _data_iterator(data_rows, ngrams, yield_cls=False):
 
 
 def _create_data_from_iterator(vocabulary, iterator, include_unk):
-    """
-    [summary]
+    """[summary]
 
     Args:
         vocabulary ([type]): [description]

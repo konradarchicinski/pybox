@@ -5,8 +5,7 @@ from .data import Table
 
 
 class TypedTable(Table):
-    """
-    [summary]
+    """[summary]
 
     Args:
         Table ([type]): [description]
@@ -14,8 +13,7 @@ class TypedTable(Table):
     __slots__ = ["data"]
 
     def __init__(self, data=None, types=None):
-        """
-        [summary]
+        """[summary]
 
         Args:
             data ([type], optional): [description]. Defaults to None.
@@ -30,8 +28,7 @@ class TypedTable(Table):
             self.data = np.array([])
 
     def new_column(self, name, data_type):
-        """
-        [summary]
+        """[summary]
 
         Args:
             name ([type]): [description]

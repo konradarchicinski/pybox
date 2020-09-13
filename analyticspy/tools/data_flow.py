@@ -8,8 +8,7 @@ import numpy as np
 
 
 def read_sql(table, database, database_directory=None):
-    """
-    [summary]
+    """[summary]
 
     Args:
         table ([type]): [description]
@@ -45,8 +44,7 @@ def read_sql(table, database, database_directory=None):
 
 
 def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
-    """
-    Function saves selected `Table` or `TypedTable` object into parquet file.
+    """Function saves selected `Table` or `TypedTable` object as parquet file.
     It works based on the `PyArrow` module, firstly transforming `Table` into
     arrow object and afterwards writing it as a parquet file.
 
@@ -62,8 +60,7 @@ def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
 
 
 def table_from_parquet(file_name, directory=DATASTORE_PATH):
-    """
-    Function loads particular parquet file as a Table object. It works based
+    """Function loads particular parquet file as a Table object. It works based
     on the `PyArrow` module, firstly reading file and storing it as an Arrow
     object and afterwards transforming it into `Table`.
 
