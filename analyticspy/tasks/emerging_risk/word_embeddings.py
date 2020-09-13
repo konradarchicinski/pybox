@@ -36,9 +36,12 @@ def prepare_initial_data_to_model(initial_text_data, processed_column):
     return data_to_model
 
 
-def continuous_bag_of_words():
+def continuous_bag_of_words(initial_text_data):
     """
     [summary]
+
+    Args:
+        initial_text_data ([type]): [description]
 
     Returns:
         [type]: [description]
@@ -73,7 +76,7 @@ def forecast_topics(text_data, lda_topics, nmf_topics, settings):
             )
             topics_dict[method][f"Topic{i}"] = list(topic_table["Word"])
 
-    cbow_model = continuous_bag_of_words()
+    cbow_model = continuous_bag_of_words(text_data)
 
     return topics_dict
 
@@ -91,9 +94,9 @@ task.add_setting(
     """)
 task.run(
     main_function=forecast_topics,
-    data_inputs=[
-        "PapersFiltered.parquet",
-        "TopicDataLDA.parquet",
-        "TopicDataNMF.parquet"
+    task_inputs=[
+        "PapersFiltered",
+        "TopicDataLDA",
+        "TopicDataNMF"
     ],
-    data_outputs=["ArticleTopics.parquet"])
+    task_outputs=["ArticleTopics"])

@@ -159,8 +159,8 @@ task_lda.add_setting(
     """)
 task_lda.run(
     main_function=latent_dirichlet_allocation,
-    data_inputs=["PapersFiltered.parquet"],
-    data_outputs=["TopicDataLDA.parquet"])
+    task_inputs=["PapersFiltered"],
+    task_outputs=["TopicDataLDA"])
 
 
 task_nmf = TaskInit(
@@ -201,5 +201,5 @@ task_nmf.add_setting(
     """)
 task_nmf.run(
     main_function=non_negative_matrix_factorization,
-    data_inputs=["PapersFiltered.parquet"],
-    data_outputs=["TopicDataNMF.parquet"])
+    task_inputs=["PapersFiltered"],
+    task_outputs=["TopicDataNMF"])
