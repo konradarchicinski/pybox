@@ -74,7 +74,6 @@ def table_from_parquet(file_name, directory=DATASTORE_PATH):
     """
     file_path = f"{directory}{file_name}.parquet"
     arrow_table = pq.read_table(file_path)
-    data_types = [(data_type.name, "O") for data_type in arrow_table.schema]
-    table = Table(arrow_table.to_pydict(), data_types)
+    table = Table(arrow_table.to_pydict())
 
     return table

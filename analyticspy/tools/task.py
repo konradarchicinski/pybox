@@ -2,6 +2,7 @@
 import ast
 import inspect
 from datetime import datetime
+from analyticspy.run_task import run_selected_module
 from .data_flow import table_to_parquet, table_from_parquet
 
 
@@ -82,8 +83,8 @@ class TaskInit:
         else:
             # Printing information about starting of the task.
             print("".join(
-                ["-" * 79, "\nTask ", self.task_name, " started on:\t",
-                 datetime.now().strftime("%Y/%m/%d, %H:%M:%S"), "\n", "-" * 79]
+                ["-" * 79, "\n", datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                 "\tTask ", self.task_name, " started.\n", "-" * 79]
             ))
             function_input_list = list()
 
@@ -92,8 +93,12 @@ class TaskInit:
                 # It needs to be solved how to handle data flow in that case.
                 inputs = list()
                 for name in task_inputs:
-                    inputs.append(table_from_parquet(name))
-                function_input_list.extend(*inputs)
+                    try:
+                        inputs.append(table_from_parquet(name))
+                    except FileNotFoundError:
+                        run_selected_module(name)
+                        inputs.append(table_from_parquet(name))
+                function_input_list.extend(inputs)
 
             if self.task_settings:
                 if self.supplied_settings:
@@ -103,6 +108,8 @@ class TaskInit:
 
             if task_outputs:
                 outputs = main_function(*function_input_list)
+                if not isinstance(outputs, tuple):
+                    outputs = tuple([outputs])
                 for output, name in zip(outputs, task_outputs):
                     table_to_parquet(output, name)
             else:
@@ -110,6 +117,6 @@ class TaskInit:
 
             # Printing information about ending of the task.
             print("".join(
-                ["-" * 79, "\nTask ", self.task_name, " ended on:\t\t",
-                 datetime.now().strftime("%Y/%m/%d, %H:%M:%S"), "\n", "-" * 79]
+                ["-" * 79, "\n", datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                 "\tTask ", self.task_name, " ended.\n", "-" * 79]
             ))

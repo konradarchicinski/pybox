@@ -7,7 +7,8 @@ import runpy
 import argparse
 
 
-def run_selected_module(supplied_task_name, help_indicator, settings):
+def run_selected_module(
+        supplied_task_name, help_indicator=False, settings=list()):
     """
     Function used to execute a task distinguished by a specific name.
 
