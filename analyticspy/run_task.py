@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from analyticspy import TASKS_PATH
+from analyticspy import TASKS_PATH, DATASTORE_PATH
 
 import os
 import ast
@@ -7,22 +7,32 @@ import runpy
 import argparse
 
 
-def run_selected_module(
-        supplied_task_name, help_indicator=False, settings=list()):
-    """
-    Function used to execute a task distinguished by a specific name.
+def run_selected_module(supplied_task_name, inputs_directory=DATASTORE_PATH,
+                        outputs_directory=DATASTORE_PATH, show_task_info=False,
+                        settings=None):
+    """Function used to execute a task distinguished by a specific name.
 
     Args:
-        supplied_task_name (string): name of the task selected for execution.
-        help_indicator (bool): if true, help for a given task is printed.
-        settings (list): list of task arguments
+        supplied_task_name (str): name of the task selected for execution.
+        inputs_directory (str, optional): directory in which potential input
+            data for a given task will be searched. Defaults to DATASTORE_PATH.
+        outputs_directory (str, optional): directory in which potential output
+            data of a given task will be saved. Defaults to DATASTORE_PATH.
+        show_task_info (bool, optional): if true, help for a given task
+            is printed. Defaults to False.
+        settings (list, optional): list of task arguments stored in strings,
+            each string contains the name of the setting and its value, they
+            are separated from each other by a colon. Defaults to None.
     """
+
     globals_dict = {
-        "HELP_INDICATOR": help_indicator,
+        "INPUTS_DIRECTORY": inputs_directory,
+        "OUTPUTS_DIRECTORY": outputs_directory,
+        "SHOW_TASK_INFO": show_task_info,
         "SETTINGS": settings,
     }
 
-    # Finding all python files which contains AnalyticsPy tasks.
+    # Finding all python files which contains application's tasks.
     task_files = list()
     for path, subdirs, files in os.walk(TASKS_PATH):
         for name in files:
@@ -60,12 +70,19 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
     with open(task_file) as task_script:
         node = ast.parse(task_script.read())
 
-        # TODO Write why next steps work in this way.
+        # Only top-level assignments are selected from each module,
+        # since this is how TaskInit instances are created.
         assign_objects = [n for n in node.body if isinstance(n, ast.Assign)]
         for assign_object in assign_objects:
             if isinstance(assign_object.value, ast.Call):
+                # For each found assignment, it is checked whether
+                # the assignedvalue is of the Call type
+                # (which is assumed to refer to TaskInit).
                 assign_object_keywords = assign_object.value.keywords
                 for keyword in assign_object_keywords:
+                    # If a suitable assignment is found its arguments are
+                    # checked, the task name in TaskInit should be stored
+                    # as Const.
                     if isinstance(keyword.value, ast.Constant):
                         if keyword.value.value == supplied_task_name:
                             check_value = True
@@ -82,6 +99,16 @@ if __name__ == "__main__":
         action="version",
         version="0.1")
     parser.add_argument(
+        "-idir",
+        "--inputs_directory",
+        type=str,
+        default=DATASTORE_PATH)
+    parser.add_argument(
+        "-odir",
+        "--outputs_directory",
+        type=str,
+        default=DATASTORE_PATH)
+    parser.add_argument(
         "-ti",
         "--task_info",
         action="store_const",
@@ -97,5 +124,7 @@ if __name__ == "__main__":
 
     run_selected_module(
         arguments.task_name,
+        arguments.inputs_directory,
+        arguments.outputs_directory,
         arguments.task_info,
         arguments.arguments)

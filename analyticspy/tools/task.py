@@ -24,28 +24,37 @@ class TaskInit:
         self.task_settings_info = dict()
 
         # Getting variables from caller's globals.
-        self.supplied_settings = inspect.stack()[1][0].f_globals["SETTINGS"]
-        self.help_indicator = inspect.stack()[1][0].f_globals["HELP_INDICATOR"]
+        global_variables = inspect.stack()[1][0].f_globals
+        self.supplied_settings = global_variables["SETTINGS"]
+        self.show_task_info = global_variables["SHOW_TASK_INFO"]
+        self.inputs_directory = global_variables["INPUTS_DIRECTORY"]
+        self.outputs_directory = global_variables["OUTPUTS_DIRECTORY"]
 
     def add_setting(self, name, value, info):
-        """[summary]
+        """Function used to add a new setting which will be supplied to a given
+        task. Setting acts as a parameter in a given task that can often be
+        modified to partially change the operation of the task.
 
         Args:
-            name ([type]): [description]
-            value ([type]): [description]
-            info ([type]): [description]
+            name (str): name of a setting.
+            value (any): information stored as a setting.
+            info (str): brief mention of the advisability of using a given setting.
         """
         self.task_settings[name] = value
         self.task_settings_info[name] = info
 
     def _overwrite_setting(self, setting):
-        """[summary]
+        """Auxiliary method that overwrites default settings with new values
+        supplied by user from command line interface.
 
         Args:
-            setting ([type]): [description]
+            setting (str): string that contains the name of the setting and
+                its value, they are separated from each other by a colon.
 
         Raises:
-            ValueError: [description]
+            ValueError: If the given setting name is not present in default
+                settings, an error is returned, as there is nothing to be
+                overwrite with the new settings value.
         """
         setting_name, setting_value = setting.split(":", 1)
         if setting_name in self.task_settings:
@@ -54,8 +63,8 @@ class TaskInit:
             raise ValueError(
                 f"`{setting_name}` has not been found in task settings.")
 
-    def _print_help(self):
-        """[summary]"""
+    def _print_task_info(self):
+        """Auxiliary method that displays basic information about called task."""
         help_string = "".join(["\nTask Info:", self.task_info])
 
         for name, info in self.task_settings_info.items():
@@ -78,40 +87,55 @@ class TaskInit:
             task_outputs (list, optional): output names which are going to be
                 used in the task. Defaults to None.
         """
-        if self.help_indicator:
-            self._print_help()
+        if self.show_task_info:
+            self._print_task_info()
         else:
             # Printing information about starting of the task.
             print("".join(
                 ["-" * 79, "\n", datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
                  "\tTask ", self.task_name, " started.\n", "-" * 79]
             ))
-            function_input_list = list()
 
+            # Solving out task's inputs.
+            function_input_list = list()
             if task_inputs:
-                # TODO write code which will run task inputs automatically.
-                # It needs to be solved how to handle data flow in that case.
                 inputs = list()
                 for name in task_inputs:
                     try:
-                        inputs.append(table_from_parquet(name))
+                        inputs.append(
+                            table_from_parquet(
+                                file_name=name,
+                                directory=self.inputs_directory))
                     except FileNotFoundError:
-                        run_selected_module(name)
-                        inputs.append(table_from_parquet(name))
+                        run_selected_module(
+                            supplied_task_name=name,
+                            inputs_directory=self.inputs_directory,
+                            outputs_directory=self.outputs_directory)
+                        inputs.append(
+                            table_from_parquet(
+                                file_name=name,
+                                directory=self.inputs_directory))
                 function_input_list.extend(inputs)
 
+            # Solving out task's settings.
             if self.task_settings:
+                # Overwriting default settings if there are new ones
+                # supplied from the command line interface.
                 if self.supplied_settings:
                     for setting in self.supplied_settings:
                         self._overwrite_setting(setting)
                 function_input_list.append(self.task_settings)
 
+            # Solving out task's outputs.
             if task_outputs:
                 outputs = main_function(*function_input_list)
                 if not isinstance(outputs, tuple):
                     outputs = tuple([outputs])
                 for output, name in zip(outputs, task_outputs):
-                    table_to_parquet(output, name)
+                    table_to_parquet(
+                        table=output,
+                        file_name=name,
+                        directory=self.outputs_directory)
             else:
                 main_function(*function_input_list)
 
