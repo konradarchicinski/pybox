@@ -1,79 +1,67 @@
 #!/usr/bin/env python
 from analyticspy import DATASTORE_PATH
-from .data import Table
+from .data_table import DataTable, array_to_dict
 from .database import create_connection
 
 import pyarrow.parquet as pq
-import numpy as np
 
 
-def read_sql(table, database, database_directory=None):
-    """[summary]
+def table_from_sqlite(table_name, database, database_directory=None):
+    """Load SQLite table and return it as the `DataTable` object.
 
     Args:
-        table ([type]): [description]
-        database ([type]): [description]
-        database_directory ([type], optional): [description]. Defaults to None.
-
-    Returns:
-        [type]: [description]
+        table_name (str): name of the SQLite table which will be loaded.
+        database (str): name of the SQLite database which will be used.
+        database_directory (str, optional): directory in which used SQLite
+            database is stored. Defaults to None.
     """
-
     if database_directory:
         conn = create_connection(database, database_directory)
     else:
         conn = create_connection(database)
+    with conn:
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM '{table_name}'")
+        data = cur.fetchall()
+        cur.execute(f"PRAGMA TABLE_INFO('{table_name}')")
+        info = cur.fetchall()
 
-    c = conn.cursor()
-    c.execute(f"SELECT * FROM '{table}'")
-    data = c.fetchall()
+    data_columns = [column[1] for column in info]
 
-    c.execute(f"PRAGMA TABLE_INFO('{table}')")
-    info = c.fetchall()
-
-    c.close()
-
-    numpy_type_map = {"TEXT": "a25", "REAL": "f4", "INTEGER": "i4"}
-
-    data_types = [(column[1], numpy_type_map[column[2]]) for column in info]
-
-    table = Table()
-    table.data = np.array(data, dtype=data_types)
-
-    return table
+    return DataTable(array_to_dict(data), names=data_columns)
 
 
 def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
-    """Function saves selected `Table` or `TypedTable` object as parquet file.
-    It works based on the `PyArrow` module, firstly transforming `Table` into
-    arrow object and afterwards writing it as a parquet file.
+    """Store selected `DataTable` object in the parquet format file. Function
+    works based on the `PyArrow` module, firstly transforming `DataTable` into
+    Arrow object and afterwards writing it as a parquet file.
 
     Args:
-        table (Table): Table object that will be saved.
-        file_name (str): name under which Table will be saved.
-        directory (str, optional): string containing directory in which Table
-            is going to be saved. Defaults to DATASTORE_PATH.
+        table (DataTable): data structure that will be saved.
+        file_name (str): name under which data structure will be saved.
+        directory (str, optional): string containing directory in which
+            DataTable is going to be saved. Defaults to DATASTORE_PATH.
     """
     file_path = f"{directory}{file_name}.parquet"
-    arrow_table = table.to_arrow
+    arrow_table = table.to_arrow_table
     pq.write_table(arrow_table, file_path)
 
 
 def table_from_parquet(file_name, directory=DATASTORE_PATH):
-    """Function loads particular parquet file as a Table object. It works based
+    """Load parquet format file as the `DataTable` object. Function works based
     on the `PyArrow` module, firstly reading file and storing it as an Arrow
-    object and afterwards transforming it into `Table`.
+    object and afterwards transforming it into `DataTable`.
 
     Args:
-        file_name (str): name of parquet file which will be load.
+        file_name (str): name of parquet file which will be loaded.
         directory (str, optional): string containing directory in which parquet
             file is stored. Defaults to DATASTORE_PATH.
 
     Returns:
-        Table: Table object.
+        DataTable: loaded data in a form of DataTable object.
     """
     file_path = f"{directory}{file_name}.parquet"
     arrow_table = pq.read_table(file_path)
-    table = Table(arrow_table.to_pydict())
+    table = DataTable(arrow_table.to_pydict())
 
     return table
