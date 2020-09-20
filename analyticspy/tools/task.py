@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import ast
 import inspect
+from analyticspy import logging
 from datetime import datetime
+
 from analyticspy.run_task import run_selected_module
 from .data_flow import table_to_parquet, table_from_parquet
 
@@ -90,11 +92,7 @@ class TaskInit:
         if self.show_task_info:
             self._print_task_info()
         else:
-            # Printing information about starting of the task.
-            print("".join(
-                ["-" * 79, "\n", datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                 "\tTask ", self.task_name, " started.\n", "-" * 79]
-            ))
+            logging.info(f"Task {self.task_name} started.")
 
             # Solving out task's inputs.
             function_input_list = list()
@@ -107,6 +105,11 @@ class TaskInit:
                                 file_name=name,
                                 directory=self.inputs_directory))
                     except FileNotFoundError:
+                        logging.info(
+                            f"\tInput file called `{name}` was not found.")
+                        logging.info(
+                            "\tSearching the task with a given name initiated...")
+
                         run_selected_module(
                             supplied_task_name=name,
                             inputs_directory=self.inputs_directory,
@@ -139,8 +142,4 @@ class TaskInit:
             else:
                 main_function(*function_input_list)
 
-            # Printing information about ending of the task.
-            print("".join(
-                ["-" * 79, "\n", datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                 "\tTask ", self.task_name, " ended.\n", "-" * 79]
-            ))
+            logging.info(f"Task {self.task_name} ended.")

@@ -20,6 +20,7 @@ dependencies:
   - bs4
   - tabulate
   - tqdm
+  - pyyaml
   - pip:
     - pep8
     - autopep8

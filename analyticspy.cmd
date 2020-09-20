@@ -1,15 +1,13 @@
 @ECHO OFF
 CALL conda activate AnalyticsPy
-ECHO ------------------------------------------------------------------------------
 ECHO.
 ECHO Welcome to AnalyticsPy.
 ECHO. 
-ECHO For more information type -h. To execute the task, pass its name.
-ECHO If you want to know more about certain task, type its name and add -ti.
+ECHO To execute the task, pass its name.
+ECHO If you want to know more about certain task, type its name and add `-ti`.
+ECHO If you want to use an interactive interpreter type `ii`.
+ECHO For more information type `-h`.
 ECHO.
-ECHO If you want to use an interactive interpreter type ii.
-ECHO.
-ECHO ------------------------------------------------------------------------------
 
 :execute
 ECHO.
