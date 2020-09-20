@@ -31,6 +31,7 @@ class TaskInit:
         self.show_task_info = global_variables["SHOW_TASK_INFO"]
         self.inputs_directory = global_variables["INPUTS_DIRECTORY"]
         self.outputs_directory = global_variables["OUTPUTS_DIRECTORY"]
+        self.supplied_task_name = global_variables["SUPPLIED_TASK_NAME"]
 
     def add_setting(self, name, value, info):
         """Function used to add a new setting which will be supplied to a given
@@ -91,7 +92,7 @@ class TaskInit:
         """
         if self.show_task_info:
             self._print_task_info()
-        else:
+        elif self.supplied_task_name == self.task_name:
             logging.info(f"Task {self.task_name} started.")
 
             # Solving out task's inputs.

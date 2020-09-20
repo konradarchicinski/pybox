@@ -29,6 +29,7 @@ def run_selected_module(supplied_task_name, inputs_directory=DATASTORE_PATH,
         "INPUTS_DIRECTORY": inputs_directory,
         "OUTPUTS_DIRECTORY": outputs_directory,
         "SHOW_TASK_INFO": show_task_info,
+        "SUPPLIED_TASK_NAME": supplied_task_name,
         "SETTINGS": settings,
     }
 
