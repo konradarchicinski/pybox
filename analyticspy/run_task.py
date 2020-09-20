@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from analyticspy import TASKS_PATH, DATASTORE_PATH
+from analyticspy import TASKS_PATH, DATASTORE_PATH, logging
 
 import os
 import ast
@@ -29,6 +29,7 @@ def run_selected_module(supplied_task_name, inputs_directory=DATASTORE_PATH,
         "INPUTS_DIRECTORY": inputs_directory,
         "OUTPUTS_DIRECTORY": outputs_directory,
         "SHOW_TASK_INFO": show_task_info,
+        "SUPPLIED_TASK_NAME": supplied_task_name,
         "SETTINGS": settings,
     }
 
@@ -50,7 +51,8 @@ def run_selected_module(supplied_task_name, inputs_directory=DATASTORE_PATH,
     if task_file_to_run:
         runpy.run_path(task_file_to_run, init_globals=globals_dict)
     else:
-        print(f"- No task has been found with `{supplied_task_name}` name.")
+        logging.error(
+            f"The task called `{supplied_task_name}` has not been found.")
 
 
 def _task_name_registered_in_file(task_file, supplied_task_name):

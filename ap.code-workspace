@@ -5,6 +5,11 @@
 		}
 	],
 	"settings": {
+		"terminal.integrated.shellArgs.windows": [
+			"/k C:\\cmder\\vendor\\init.bat"
+		],
+		"terminal.integrated.fontSize": 12,
+		"python.terminal.activateEnvInCurrentTerminal": true,
 		"editor.formatOnSave": true,
 		"python.formatting.provider": "autopep8",
 		"python.formatting.autopep8Args": [
