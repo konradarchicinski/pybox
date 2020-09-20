@@ -3,7 +3,9 @@ import operator
 import numpy as np
 import pyarrow as pa
 from sys import getsizeof
-from IPython.core.display import display, HTML
+
+from .array_to_html import (
+    show_table, show_table_head, show_table_tail, show_table_random)
 
 
 DATA_TYPES = [int, float, complex, bool, str, type(None)]
@@ -12,11 +14,11 @@ DATA_TYPES = [int, float, complex, bool, str, type(None)]
 class DataTable:
     """Homogeneous, size-mutable, typed data structure."""
 
-    __slots__ = ["_data", "_columns"]
+    __slots__ = ["_data", "_data_map"]
 
     def __init__(self, data=None, names=None):
         self._data = list()
-        self._columns = dict()
+        self._data_map = list()
 
         if isinstance(data, np.ndarray):
             data = array_to_dict(data)
@@ -29,48 +31,32 @@ class DataTable:
     def __getitem__(self, key):
         if isinstance(key, tuple):
             name, index = key
-            return self._data[self._columns[name][0]][index]
+            return self._data[self.column_index(name)][index]
         elif isinstance(key, str):
-            return self._data[self._columns[key][0]]
+            return self._data[self.column_index(key)]
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
             name, index = key
-            if name not in self._columns.keys():
+            if name not in self.columns:
                 self.add_column(name, [None] * self.length, type(value))
             try:
-                self._data[self._columns[name][0]][index] = value
+                self._data[self.column_index(name)][index] = value
             except IndexError:
                 self.remove_column(name)
-                raise IndexError("list assignment index out of range")
+                raise IndexError("list assignment index out of range.")
         elif isinstance(key, str):
             value = self._align_length(value)
-            if key not in self._columns.keys():
+            if key not in self.columns:
                 self.add_column(key, value)
             else:
-                self._data[self._columns[key][0]] = value
+                self._data[self.column_index(key)] = value
 
     def __str__(self):
-        """Display a string representation for a particular Table."""
-        return "".join([self.info, "\n"])
+        return self.info
 
     def __repr__(self):
-        """Display a html string representation for a particular Table."""
-        html = "<table>\n<tr>\n<th></th>\n"
-
-        for column, (_, datatype) in self._columns.items():
-            html = f"{html}<th>{str(column)}<br>{datatype.__name__}</br></th>\n"
-        html = "".join([html, "</tr>\n"])
-
-        for idx in range(self.length):
-            html = "".join([html, "<tr>\n<td>", str(idx), "</td>\n"])
-            for column_idx, _ in self._columns.values():
-                html = f"{html}<td>{str(self._data[column_idx][idx])}</td>\n"
-            html = "".join([html, "</tr>\n"])
-        html = "".join([html, "</table>"])
-
-        display(HTML(html))
-        return ""
+        return "DataTable"
 
     def _recognize_type(self, column):
         """Return recognized type of the data from supplied column.
@@ -111,7 +97,7 @@ class DataTable:
     @property
     def columns(self):
         """Return a list of column names."""
-        return list(self._columns.keys())
+        return [column_name for column_name, _, _ in self._data_map]
 
     @property
     def length(self):
@@ -130,9 +116,9 @@ class DataTable:
     def info(self):
         """Return information about shape and bytesize of the DataTable."""
         info = (
-            "DataTable\n"
-            f"(shape=({self.width}x{self.length}),"
-            f"bytesize={getsizeof(self._data) + getsizeof(self._columns)})"
+            "DataTable"
+            f"(shape={self.width}x{self.length},"
+            f"bytesize={getsizeof(self._data) + getsizeof(self._data_map)})"
         )
         for name, dtype in self.datatypes.items():
             info = "".join([info, "\n", name, ": ", dtype.__name__])
@@ -140,8 +126,8 @@ class DataTable:
 
     @property
     def datatypes(self):
-        """Return dictionary of column names and their data types."""
-        return {key: value[1] for key, value in self._columns.items()}
+        """Return a dictionary of column names and their data types."""
+        return {column_name: dtype for column_name, _, dtype in self._data_map}
 
     @property
     def to_numpy_array(self):
@@ -158,6 +144,55 @@ class DataTable:
             names=self.columns
         )
         return arrow_table
+
+    def display(self, rows_number=10):
+        """Display the contents of the current DataTable in rendered html format.
+
+        Args:
+            rows_number (int, optional): number of rows/observations
+                to be displeyed. Defaults to 10.
+        """
+        show_table(self._data, self._data_map, rows_number)
+
+    def display_random(self, rows_number=10):
+        """Display a random representation of the current DataTable contents
+        in rendered html format.
+
+        Args:
+            rows_number (int, optional): number of rows/observations
+                to be displeyed. Defaults to 10.
+        """
+        show_table_random(self._data, self._data_map, rows_number)
+
+    def display_head(self, rows_number=10):
+        """Display the head of the current DataTable contents in rendered html format.
+
+        Args:
+            rows_number (int, optional): number of rows/observations
+                to be displeyed. Defaults to 10.
+        """
+        show_table_head(self._data, self._data_map, rows_number)
+
+    def display_tail(self, rows_number=10):
+        """Display the tail of the current DataTable contents in rendered html format.
+
+        Args:
+            rows_number (int, optional): number of rows/observations
+                to be displeyed. Defaults to 10.
+        """
+        show_table_tail(self._data, self._data_map, rows_number)
+
+    def column_index(self, column_name):
+        """Return the index number of the specified column.
+
+        Args:
+            column_name (str): name of the specified column.
+        """
+        for element in self._data_map:
+            if element[0] == column_name:
+                return element[1]
+        raise IndexError(
+            f"A column called `{column_name}` has not been found in DataTable.")
 
     def rows_range(self, start=None, stop=None, step=None):
         """Return an iterator containing the range of DataTable indices.
@@ -177,6 +212,25 @@ class DataTable:
             step = 1
         return range(start, stop, step)
 
+    def create_dummies(self, column_name):
+        """Convert specified column containing categorical variables into
+        several binarized ones.
+
+        Args:
+            column_name (str): name of the specified column.
+        """
+        levels = set(self._data[self.column_index(column_name)])
+        for level in levels:
+            level_column_name = "".join([column_name, str(level)])
+            self.add_column(level_column_name, [None] * self.length, int)
+            for idx in self.rows_range():
+                if self._data[self.column_index(column_name)][idx] is None:
+                    continue
+                elif self._data[self.column_index(column_name)][idx] == level:
+                    self._data[self.column_index(level_column_name)][idx] = 1
+                else:
+                    self._data[self.column_index(level_column_name)][idx] = 0
+
     def add_column(self, column_name, column_value, datatype=None):
         """Create a new column in the DataTable.
 
@@ -190,7 +244,7 @@ class DataTable:
             if datatype not in DATA_TYPES and datatype.__module__ != "numpy":
                 datatype = object
         self._data.append(column_value)
-        self._columns[column_name] = (len(self._data) - 1, datatype)
+        self._data_map.append([column_name, len(self._data) - 1, datatype])
 
     def remove_column(self, column_name):
         """Remove a column from the DataTable.
@@ -198,13 +252,16 @@ class DataTable:
         Args:
             column_name (str): name of the column to be removed.
         """
-        column_index = self._columns[column_name][0]
-        del self._columns[column_name]
-        del self._data[column_index]
+        for column_map in self._data_map:
+            if column_map[0] == column_name:
+                column_index = column_map[1]
+                self._data_map.remove(column_map)
+                break
+        for column_map in self._data_map:
+            if column_map[1] > column_index:
+                column_map[1] -= 1
 
-        for column, (index, _) in self._columns.items():
-            if index > column_index:
-                self._columns[column][0] -= 1
+        del self._data[column_index]
 
 
 def array_to_dict(array):
