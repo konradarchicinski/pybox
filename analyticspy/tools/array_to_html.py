@@ -16,14 +16,20 @@ def show_table(data, data_map, rows_number):
             the data type appearing in the column (type).
         rows_number (int): number of elements to be displeyed.
     """
+    data_length = len(data)
+
     html_table_fragment = _create_table_header(data_map)
-    html_table_fragment = _create_table_body(
-        html_table_fragment, data, data_map, range(ceil(rows_number / 2)))
-    html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
-    data_length = len(data[0])
-    html_table_fragment = _create_table_body(
-        html_table_fragment, data, data_map,
-        range(data_length - floor(rows_number / 2), data_length))
+    if data_length > rows_number:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(ceil(rows_number / 2)))
+        html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map,
+            range(data_length - floor(rows_number / 2), data_length))
+    else:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(data_length))
+
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
 
@@ -41,10 +47,17 @@ def show_table_random(data, data_map, rows_number):
             the data type appearing in the column (type).
         rows_number (int): number of elements to be displeyed.
     """
+    data_length = len(data)
+
     html_table_fragment = _create_table_header(data_map)
-    html_table_fragment = _create_table_body(
-        html_table_fragment, data, data_map,
-        sample(range(0, len(data[0])), rows_number))
+    if data_length > rows_number:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map,
+            sample(range(0, data_length), rows_number))
+    else:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(data_length))
+
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
 
@@ -61,10 +74,17 @@ def show_table_head(data, data_map, rows_number):
             the data type appearing in the column (type).
         rows_number (int): number of elements to be displeyed.
     """
+    data_length = len(data)
+
     html_table_fragment = _create_table_header(data_map)
-    html_table_fragment = _create_table_body(
-        html_table_fragment, data, data_map, range(ceil(rows_number)))
-    html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
+    if data_length > rows_number:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(ceil(rows_number)))
+        html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
+    else:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(data_length))
+
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
 
@@ -81,13 +101,18 @@ def show_table_tail(data, data_map, rows_number):
             the data type appearing in the column (type).
         rows_number (int): number of elements to be displeyed.
     """
-    html_table_fragment = _create_table_header(data_map)
-    html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
+    data_length = len(data)
 
-    data_length = len(data[0])
-    html_table_fragment = _create_table_body(
-        html_table_fragment, data, data_map,
-        range(data_length - ceil(rows_number), data_length))
+    html_table_fragment = _create_table_header(data_map)
+    if data_length > rows_number:
+        html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map,
+            range(data_length - ceil(rows_number), data_length))
+    else:
+        html_table_fragment = _create_table_body(
+            html_table_fragment, data, data_map, range(data_length))
+
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
 
@@ -102,7 +127,7 @@ def _create_table_header(data_map):
             the data type appearing in the column (type).
     """
     html_table_fragment = "<table>\n<tr>\n<th><br></br><br></br>Index</th>\n"
-    for column, _, dtype in data_map:
+    for column, dtype in data_map:
         html_table_fragment = "".join([
             html_table_fragment, "<th><b><u>", str(column),
             "</u></b><br>DataType:", dtype.__name__, "</br></th>\n"
@@ -127,10 +152,10 @@ def _create_table_body(html_table_fragment, data, data_map, iterator):
     for index in iterator:
         html_table_fragment = "".join(
             [html_table_fragment, "<tr>\n<td>", str(index), "</td>\n"])
-        for column, column_index, _ in data_map:
+        for column_index, (column, _) in enumerate(data_map):
             html_table_fragment = "".join([
                 html_table_fragment, "<td>",
-                str(data[column_index][index]), "</td>\n"
+                str(data[index][column_index]), "</td>\n"
             ])
         html_table_fragment = "".join([html_table_fragment, "</tr>\n"])
     return html_table_fragment
