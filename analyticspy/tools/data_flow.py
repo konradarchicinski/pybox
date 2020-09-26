@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 from analyticspy import DATASTORE_PATH
-from .data_table import DataTable, array_to_dict
+from .data_table import DataTable
 from .database import create_connection
 
 import pyarrow.parquet as pq
+import numpy as np
 
 
 def table_from_sqlite(table_name, database, database_directory=None):
@@ -28,7 +29,7 @@ def table_from_sqlite(table_name, database, database_directory=None):
 
     data_columns = [column[1] for column in info]
 
-    return DataTable(array_to_dict(data), names=data_columns)
+    return DataTable(np.array(data), names=data_columns)
 
 
 def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
