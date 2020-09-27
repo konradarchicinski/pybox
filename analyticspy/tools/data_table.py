@@ -49,7 +49,7 @@ class DataTable:
             try:
                 self._data[index][self.column_index(name)] = value
             except IndexError:
-                self.remove_column(name)
+                self.remove_columns([name])
                 raise IndexError("list assignment index out of range.")
         elif isinstance(key, str):
             if key not in self.columns:
@@ -234,20 +234,21 @@ class DataTable:
                 datatype = object
         self._data_map.insert(column_index, [column_name, datatype])
 
-    def remove_column(self, column_name):
-        """Remove a column from the DataTable.
+    def remove_columns(self, column_names):
+        """Remove selected columns from the DataTable.
 
         Args:
-            column_name (str): name of the column to be removed.
+            column_names (list): column names to be removed.
         """
-        for idx, column_map in enumerate(self._data_map):
-            if column_map[0] == column_name:
-                self._data_map.remove(column_map)
-                column_index = idx
-                break
+        for column_name in column_names:
+            for idx, column_map in enumerate(self._data_map):
+                if column_map[0] == column_name:
+                    self._data_map.remove(column_map)
+                    column_index = idx
+                    break
 
-        for row_idx in range(self.length):
-            del self._data[row_idx][column_index]
+            for row_idx in range(self.length):
+                del self._data[row_idx][column_index]
 
     def rename_columns(self, old_names, new_names):
         """Rename selected column names.
@@ -329,7 +330,7 @@ class DataTable:
                 else:
                     self._data[idx][self.column_index(level_column_name)] = 0
         if remove_in_place:
-            self.remove_column(column_name)
+            self.remove_columns([column_name])
 
     def concatenate(self, outer_data, inner_columns, outer_columns):
         """Concatenate the DataTable with an external one.
@@ -374,7 +375,7 @@ class DataTable:
                 self._data[idx].extend([None] * outer_data_width)
             else:
                 self._data[idx].extend(outer_data_copy._data[position])
-        self.remove_column("OuterMainColumn")
+        self.remove_columns(["OuterMainColumn"])
 
     def apply(self, column_name, function):
         """Apply supplied transformation on all values in the selected column.
