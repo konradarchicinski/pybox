@@ -1,10 +1,17 @@
 #!/usr/bin/env python
-import operator
 import datetime
 import numpy as np
-from bisect import bisect_left
+from copy import deepcopy
+
+import pybox.tools.data.data_helpers as btddh
+import pybox.tools.data.data_to_html as btddth
+import pybox.tools.data.data_table_row as btddtr
+
 
 DATA_TYPES = [int, float, complex, bool, str, type(None), datetime.date]
+
+
+# TODO always transform supllied data to the format of a column.
 
 
 class DataTable:
@@ -12,7 +19,7 @@ class DataTable:
 
     __slots__ = ["_data", "_data_map"]
 
-    def __init__(self, data=None, names=None):
+    def __init__(self, data=None, names=None, dtypes=None):
         self._data = list()
         self._data_map = list()
 
@@ -24,14 +31,22 @@ class DataTable:
             if not names:
                 names = list(data.keys())
 
-        for column_idx in range(len(self._data[0])):
-            self._data_map.append([
-                names[column_idx],
-                recognize_type((
-                    self._data[row_idx][column_idx]
-                    for row_idx in range(len(self._data))
-                ))
-            ])
+        if self.length == 0 or not data:
+            if names and dtypes:
+                for name, dtype in zip(names, dtypes):
+                    self._data_map.append([name, dtype])
+            else:
+                raise ValueError(
+                    "If data not supplied, both `names` and `dtypes` must not be none.")
+        else:
+            for column_idx in range(len(self._data[0])):
+                self._data_map.append([
+                    names[column_idx],
+                    btddh.recognize_type((
+                        self._data[row_idx][column_idx]
+                        for row_idx in range(len(self._data))
+                    ))
+                ])
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
@@ -61,7 +76,7 @@ class DataTable:
                 self._data[0][self.column_index(key)] = element
 
     def __iter__(self):
-        return (DataTableRow(self, row) for row in range(self.length))
+        return (btddtr.DataTableRow(self, row) for row in range(self.length))
 
     def __str__(self):
         return self.info
@@ -72,7 +87,6 @@ class DataTable:
     @property
     def copy(self):
         """Return deepcopy of the DataTable."""
-        from copy import deepcopy
         return deepcopy(self)
 
     @property
@@ -98,26 +112,7 @@ class DataTable:
     @property
     def bytesize(self):
         """Returns the approximate memory DataTable footprint."""
-        # Code modified from `https://code.activestate.com/recipes/577504/`.
-        from sys import getsizeof
-        from itertools import chain
-
-        all_handlers = {tuple: iter, list: iter, set: iter, frozenset: iter,
-                        dict: lambda d: chain.from_iterable(d.items())}
-        seen = set()
-        default_size = getsizeof(0)
-
-        def _sizeof(obj):
-            if id(obj) in seen:
-                return 0
-            seen.add(id(obj))
-            size = getsizeof(obj, default_size)
-            for typ, handler in all_handlers.items():
-                if isinstance(obj, typ):
-                    size += sum(map(_sizeof, handler(obj)))
-                    break
-            return size
-        return _sizeof(self._data) + _sizeof(self._data_map)
+        return btddh.byte_size(self._data) + btddh.byte_size(self._data_map)
 
     @property
     def info(self):
@@ -162,17 +157,14 @@ class DataTable:
                 Otherwise display entire or first heading and tail elements.
                 Defaults to None.
         """
-        from .array_to_html import (
-            show_table, show_table_random, show_table_head, show_table_tail
-        )
         if not display_type:
-            show_table(self._data, self._data_map, rows_number)
+            btddth.show_table(self._data, self._data_map, rows_number)
         elif display_type.lower() == "random":
-            show_table_random(self._data, self._data_map, rows_number)
+            btddth.show_table_random(self._data, self._data_map, rows_number)
         elif display_type.lower() == "head":
-            show_table_head(self._data, self._data_map, rows_number)
+            btddth.show_table_head(self._data, self._data_map, rows_number)
         elif display_type.lower() == "tail":
-            show_table_tail(self._data, self._data_map, rows_number)
+            btddth.show_table_tail(self._data, self._data_map, rows_number)
 
     def column_index(self, column_name):
         """Return the index number of the specified column.
@@ -229,7 +221,7 @@ class DataTable:
             self._data[idx].insert(column_index, column_values[idx])
 
         if not datatype:
-            datatype = recognize_type(column_values)
+            datatype = btddh.recognize_type(column_values)
             if datatype not in DATA_TYPES and datatype.__module__ != "numpy":
                 datatype = object
         self._data_map.insert(column_index, [column_name, datatype])
@@ -369,7 +361,7 @@ class DataTable:
         self._data_map.extend(outer_data_copy._data_map)
 
         for idx in self.rows_range():
-            position = binary_search(
+            position = btddh.binary_search(
                 outer_data_copy["OuterMainColumn"], self[inner_column, idx])
             if position is None:
                 self._data[idx].extend([None] * outer_data_width)
@@ -390,72 +382,3 @@ class DataTable:
         for index in self.rows_range():
             self._data[index][column_index] = function(
                 self._data[index][column_index])
-
-
-class DataTableRow:
-    """Auxiliary class of DataTable objects used for rows operations."""
-
-    def __init__(self, instance, row_index):
-        self.row_index = row_index
-        self.instance = instance
-
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            column_index = self.instance.column_index(key)
-            return self.instance._data[self.row_index][column_index]
-        else:
-            return self.instance._data[self.row_index]
-
-    def __setitem__(self, key, value):
-        if key not in self.instance.columns:
-            self.instance.insert_column(
-                key, [None] * self.instance.length, type(value))
-        column_index = self.instance.column_index(key)
-        self.instance._data[self.row_index][column_index] = value
-
-    def __repr__(self):
-        row_content = {column_name: self.instance._data[self.row_index][column_index]
-                       for column_name, column_index, _ in self.instance._data_map}
-        return f"DataTableRow({row_content})"
-
-
-def recognize_type(vector):
-    """Return recognized type of the data from the supplied list.
-
-    Args:
-        vector (list): vector from which type is to be recognized.
-    """
-    vector_types = {}
-    for element in vector:
-        try:
-            vector_types[type(element)] += 1
-        except KeyError:
-            vector_types[type(element)] = 0
-    recognized_type = max(
-        vector_types.items(),
-        key=operator.itemgetter(1))[0]
-    return recognized_type
-
-
-def binary_search(lookup_list, lookup_value, low_end=0, high_end=None):
-    """Return index of the searched value in the supplied list, or None value
-    if one does not occur in it.
-
-    Args:
-        lookup_list (list): vector searched.
-        lookup_value (any): value searched.
-        low_end (int, optional): index defining start of a search. Defaults to 0.
-        high_end (int, optional): index defining end of a search. Defaults to None.
-    """
-    if lookup_value is None:
-        return None
-    if high_end is None:
-        high_end = len(lookup_list)
-
-    position = bisect_left(lookup_list, lookup_value, low_end, high_end)
-    if (position != high_end and
-        lookup_list[position] == lookup_value and
-            type(lookup_list[position]) == type(lookup_value)):
-        return position
-    else:
-        return None

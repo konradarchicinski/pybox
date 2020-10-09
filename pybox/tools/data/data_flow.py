@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from analyticspy import DATASTORE_PATH
-from .data_table import DataTable
-from .database import create_connection
+from pybox import DATASTORE_PATH
+import pybox.tools.data.data_table as btddt
+import pybox.tools.database as btdb
 
 import pyarrow.parquet as pq
 import numpy as np
@@ -17,9 +17,9 @@ def table_from_sqlite(table_name, database, database_directory=None):
             database is stored. Defaults to None.
     """
     if database_directory:
-        conn = create_connection(database, database_directory)
+        conn = btdb.create_connection(database, database_directory)
     else:
-        conn = create_connection(database)
+        conn = btdb.create_connection(database)
     with conn:
         cur = conn.cursor()
         cur.execute(f"SELECT * FROM '{table_name}'")
@@ -29,7 +29,7 @@ def table_from_sqlite(table_name, database, database_directory=None):
 
     data_columns = [column[1] for column in info]
 
-    return DataTable(np.array(data), names=data_columns)
+    return btddt.DataTable(np.array(data), names=data_columns)
 
 
 def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
@@ -63,6 +63,4 @@ def table_from_parquet(file_name, directory=DATASTORE_PATH):
     """
     file_path = f"{directory}{file_name}.parquet"
     arrow_table = pq.read_table(file_path)
-    table = DataTable(arrow_table.to_pydict())
-
-    return table
+    return btddt.DataTable(arrow_table.to_pydict())

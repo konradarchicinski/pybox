@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from analyticspy.tools.task import TaskInit
+from pybox.tools.task import TaskInit
 
 from gensim.models import Word2Vec
 from nltk.tokenize import sent_tokenize, word_tokenize

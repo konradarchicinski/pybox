@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import ast
 import inspect
-from analyticspy import logging
+import logging
 from datetime import datetime
 
-from analyticspy.run_task import run_selected_module
-from .data_flow import table_to_parquet, table_from_parquet
+import pybox.run_task as brt
+import pybox.tools.data.data_flow as btddf
 
 
 class TaskInit:
@@ -102,7 +102,7 @@ class TaskInit:
                 for name in task_inputs:
                     try:
                         inputs.append(
-                            table_from_parquet(
+                            btddf.table_from_parquet(
                                 file_name=name,
                                 directory=self.inputs_directory))
                     except FileNotFoundError:
@@ -111,12 +111,12 @@ class TaskInit:
                         logging.info(
                             "\tSearching the task with a given name initiated...")
 
-                        run_selected_module(
+                        brt.run_selected_module(
                             supplied_task_name=name,
                             inputs_directory=self.inputs_directory,
                             outputs_directory=self.outputs_directory)
                         inputs.append(
-                            table_from_parquet(
+                            btddf.table_from_parquet(
                                 file_name=name,
                                 directory=self.inputs_directory))
                 function_input_list.extend(inputs)
@@ -136,7 +136,7 @@ class TaskInit:
                 if not isinstance(outputs, tuple):
                     outputs = tuple([outputs])
                 for output, name in zip(outputs, task_outputs):
-                    table_to_parquet(
+                    btddf.table_to_parquet(
                         table=output,
                         file_name=name,
                         directory=self.outputs_directory)

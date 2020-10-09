@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-from analyticspy import TASKS_PATH, DATASTORE_PATH, logging
+from pybox import TASKS_PATH, DATASTORE_PATH
 
 import os
 import ast
 import runpy
 import argparse
+import logging
 
 
 def run_selected_module(supplied_task_name, inputs_directory=DATASTORE_PATH,

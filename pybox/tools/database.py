@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from analyticspy import DATASTORE_PATH, logging
+from pybox import DATASTORE_PATH
 
 import sqlite3
+import logging
 
 
 def create_connection(database_name, database_directory=DATASTORE_PATH):

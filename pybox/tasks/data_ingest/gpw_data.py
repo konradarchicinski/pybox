@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from analyticspy.tools.task import TaskInit
+from pybox.tools.task import TaskInit
 
-import analyticspy.tools.database as atdb
+import pybox.tools.database as atdb
 import bs4
 import requests
 import pandas as pd

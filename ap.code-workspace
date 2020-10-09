@@ -16,5 +16,6 @@
 			"--max-line-length",
 			"79",
 		],
+		"python.pythonPath": "C:\\Users\\Konrad\\Anaconda3\\envs\\PyBox\\python.exe",
 	}
 }

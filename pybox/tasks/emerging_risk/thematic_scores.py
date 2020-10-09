@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from analyticspy.tools.task import TaskInit
+from pybox.tools.task import TaskInit
 
 
 def calculate_daily_scores(processed_daily_news):

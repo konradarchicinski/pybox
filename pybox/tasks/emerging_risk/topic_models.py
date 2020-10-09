@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from analyticspy.tools.task import TaskInit
+from pybox.tools.task import TaskInit
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation

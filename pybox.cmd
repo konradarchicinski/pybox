@@ -1,7 +1,7 @@
 @ECHO OFF
-CALL conda activate AnalyticsPy
+CALL conda activate PyBox
 ECHO.
-ECHO Welcome to AnalyticsPy.
+ECHO Welcome to PyBox.
 ECHO. 
 ECHO To execute the task, pass its name.
 ECHO If you want to know more about certain task, type its name and add `-ti`.
@@ -21,5 +21,5 @@ CALL ipython
 GOTO execute
 
 :run_task
-CALL python -m analyticspy.run_task %args%
+CALL python -m pybox.run_task %args%
 GOTO execute

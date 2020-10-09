@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from analyticspy.tools.task import TaskInit
-import analyticspy.tools.torch_dataset as attd
+from pybox.tools.task import TaskInit
+import pybox.tools.torch_dataset as attd
 
 import time
 import torch
