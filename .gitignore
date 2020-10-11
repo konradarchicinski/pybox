@@ -11,6 +11,9 @@
 profile_default/
 ipython_config.py
 
+# Debug
+debug.log
+
 # Data folders
 datalake/
 datastore/

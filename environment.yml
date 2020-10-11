@@ -16,6 +16,7 @@ dependencies:
   - scipy
   - nltk
   - flask
+  - selenium
   - bs4
   - tqdm
   - pyyaml
