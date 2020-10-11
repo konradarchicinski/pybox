@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox._globals import TASKS_PATH, DATASTORE_PATH
+from pybox.GLOBALS import TASKS_PATH, DATASTORE_PATH
 
 import os
 import ast

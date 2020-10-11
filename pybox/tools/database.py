@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox._globals import DATASTORE_PATH
+from pybox.GLOBALS import DATASTORE_PATH
 
 import sqlite3
 import logging
