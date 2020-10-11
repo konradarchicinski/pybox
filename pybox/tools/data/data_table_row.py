@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+from pybox.tools.data.data_helpers import to_date
+
+from datetime import datetime, date
 
 
 class DataTableRow:
@@ -17,10 +20,17 @@ class DataTableRow:
 
     def __setitem__(self, key, value):
         if key not in self.instance.columns:
-            self.instance.insert_column(
-                key, [None] * self.instance.length, type(value))
+            self.instance.insert_column(key, [], datatype=type(value))
         column_index = self.instance.column_index(key)
-        self.instance._data[self.row_index][column_index] = value
+
+        # Each assign value is transformed to the type of a given column.
+        column_type = self.instance._data_map[column_index][1]
+
+        if column_type in [date, datetime]:
+            transformed_value = to_date(value, column_type)
+        else:
+            transformed_value = column_type(value)
+        self.instance._data[self.row_index][column_index] = transformed_value
 
     def __repr__(self):
         row_content = {column_name: self.instance._data[self.row_index][column_index]

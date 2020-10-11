@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-import datetime
-import numpy as np
-from copy import deepcopy
-
 import pybox.tools.data.data_helpers as btddh
 import pybox.tools.data.data_to_html as btddth
 import pybox.tools.data.data_table_row as btddtr
 
+from copy import deepcopy
+from datetime import date, datetime
 
-DATA_TYPES = [int, float, complex, bool, str, type(None), datetime.date]
 
-
-# TODO always transform supllied data to the format of a column.
+DATA_TYPES = [int, float, complex, bool, str, type(None), date, datetime]
 
 
 class DataTable:
@@ -23,15 +19,14 @@ class DataTable:
         self._data = list()
         self._data_map = list()
 
-        if isinstance(data, np.ndarray):
-            self._data = data.tolist()
-
         if isinstance(data, dict):
             self._data = list(map(list, zip(*data.values())))
             if not names:
                 names = list(data.keys())
+        elif type(data).__module__ == "numpy":
+            self._data = data.tolist()
 
-        if self.length == 0 or not data:
+        if self.length == 0 or data is None:
             if names and dtypes:
                 for name, dtype in zip(names, dtypes):
                     self._data_map.append([name, dtype])
@@ -58,22 +53,35 @@ class DataTable:
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
-            name, index = key
+            name, idx = key
             if name not in self.columns:
                 self.insert_column(name, [None] * self.length, type(value))
             try:
-                self._data[index][self.column_index(name)] = value
+                self._data[idx][self.column_index(name)] = value
             except IndexError:
                 self.remove_columns([name])
-                raise IndexError("list assignment index out of range.")
+                raise IndexError("List assignment index out of range.")
         elif isinstance(key, str):
             if key not in self.columns:
                 self.insert_column(key, [None] * self.length, type(value))
+
             if isinstance(value, list) or isinstance(value, tuple):
+                datatype = btddh.recognize_type(value)
                 for index, element in enumerate(value):
-                    self._data[index][self.column_index(key)] = element
+                    self._data[index][self.column_index(key)] = (
+                        btddh.change_type(element, datatype)
+                    )
             else:
-                self._data[0][self.column_index(key)] = element
+                self._data[0][self.column_index(key)] = value
+                for idx in range(1, self.length):
+                    self._data[idx][self.column_index(key)] = None
+                self._data_map[self.column_index(key)][1] = object
+        else:
+            raise ValueError(
+                "The wrong key type was supplied, it should be `str`",
+                "representing name of the column or \npair of `str` ",
+                "representing a column and `int` representing certain ",
+                "row splitted by comma. ")
 
     def __iter__(self):
         return (btddtr.DataTableRow(self, row) for row in range(self.length))
@@ -82,7 +90,7 @@ class DataTable:
         return self.info
 
     def __repr__(self):
-        return "DataTable"
+        return f"DataTable({self.width}x{self.length})"
 
     @property
     def copy(self):
@@ -129,8 +137,10 @@ class DataTable:
     @property
     def to_numpy_array(self):
         """Return numpy structured array object created from the DataTable."""
+        from numpy import array
+
         types_list = list(self.datatypes.items())
-        numpy_array = np.array(self._data, dtype=types_list)
+        numpy_array = array(self._data, dtype=types_list)
         return numpy_array
 
     @property
@@ -215,15 +225,20 @@ class DataTable:
             for _ in range(abs(length_difference)):
                 self._data.append([None] * self.width)
 
-        if column_index is None:
-            column_index = self.length
-        for idx in range(self.length):
-            self._data[idx].insert(column_index, column_values[idx])
-
         if not datatype:
             datatype = btddh.recognize_type(column_values)
             if datatype not in DATA_TYPES and datatype.__module__ != "numpy":
-                datatype = object
+                raise ValueError(
+                    "Wrong type of data supplied, it must be one of: ",
+                    f"{','.join([str(dtype) for dtype in DATA_TYPES])} or numpy.array.")
+
+        if column_index is None:
+            column_index = self.length
+        for idx in range(self.length):
+            self._data[idx].insert(
+                column_index,
+                btddh.change_type(column_values[idx], datatype))
+
         self._data_map.insert(column_index, [column_name, datatype])
 
     def remove_columns(self, column_names):
@@ -236,11 +251,27 @@ class DataTable:
             for idx, column_map in enumerate(self._data_map):
                 if column_map[0] == column_name:
                     self._data_map.remove(column_map)
-                    column_index = idx
+                    for row_idx in range(self.length):
+                        del self._data[row_idx][idx]
                     break
 
-            for row_idx in range(self.length):
-                del self._data[row_idx][column_index]
+    def insert_row(self, row_values, row_index=None):
+        """Insert a row into the DataTable object.
+
+        Args:
+            row_values (array-like): list of values to be inserted.
+            row_index (int, optional): number of row. Defaults to length of DateTable.
+        """
+        if len(row_values) != self.width:
+            raise ValueError(
+                "Supplied row needs to be the same width as DataTable",
+                f", which is {self.width}.")
+        for idx, value in enumerate(row_values):
+            row_values[idx] = btddh.change_type(value, self._data_map[idx][1])
+
+        if row_index is None:
+            row_index = self.length
+        self._data.insert(row_index, row_values)
 
     def rename_columns(self, old_names, new_names):
         """Rename selected column names.
@@ -269,7 +300,7 @@ class DataTable:
                          if column not in column_names]
         data_to_sort = []
         new_data_map = []
-        for idx, column in enumerate(column_names + other_columns):
+        for column in column_names + other_columns:
             data_to_sort.append([self._data[index][self.column_index(column)]
                                  for index in range(self.length)])
             new_data_map.append([column, self.datatypes[column]])

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox._globals import DATASTORE_PATH
+from pybox.GLOBALS import DATASTORE_PATH
 import pybox.tools.data.data_table as btddt
 import pybox.tools.database as btdb
 
