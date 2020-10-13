@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.data.data_helpers import to_date
+from pybox.tools.data.data_helpers import to_date, to_datetime
 
 from datetime import datetime, date
 
@@ -26,8 +26,10 @@ class DataTableRow:
         # Each assign value is transformed to the type of a given column.
         column_type = self.instance._data_map[column_index][1]
 
-        if column_type in [date, datetime]:
-            transformed_value = to_date(value, column_type)
+        if isinstance(column_type, date):
+            transformed_value = to_date(value)
+        elif isinstance(column_type, datetime):
+            transformed_value = to_datetime(value)
         else:
             transformed_value = column_type(value)
         self.instance._data[self.row_index][column_index] = transformed_value

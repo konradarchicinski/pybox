@@ -25,24 +25,32 @@ def recognize_type(vector):
     return recognized_type
 
 
-def to_date(date_input, date_object=None):
-    """Return datetime or date object created from supplied input.
+def to_date(date_input):
+    """Return date object created from supplied input.
 
     Args:
-        date_input (str): value to be transformed.
-        date_object (str, optional): target datetime trasformation object.
-            Can be `date` or `datetime`. Defaults to date.
+        date_input (str, date-like): value to be transformed.
     """
-
-    if isinstance(date_input, date) or isinstance(date_input, datetime):
-        return date_input
-    elif date_input is None:
+    if date_input is None:
         return None
-    if not date_object or date_object == "date":
-        date_object = date
-    elif date_object == "datetime":
-        date_object = datetime
-    return parse(date_input, default=date_object.min)
+    elif isinstance(date_input, datetime):
+        return date_input.date()
+    else:
+        return parse(date_input, default=date.min)
+
+
+def to_datetime(date_input):
+    """Return datetime object created from supplied input.
+
+    Args:
+        date_input (str, date-like): value to be transformed.
+    """
+    if date_input is None:
+        return None
+    elif isinstance(date_input, date):
+        return datetime.combine(date_input, datetime.min.time())
+    else:
+        return parse(date_input)
 
 
 def change_type(value, target_type):
@@ -54,9 +62,13 @@ def change_type(value, target_type):
     """
     if value is None:
         return None
+    elif isinstance(value, target_type):
+        return value
+    elif target_type == date:
+        return to_date(value)
+    elif target_type == datetime:
+        return to_datetime(value)
     else:
-        if target_type in [date, datetime]:
-            return to_date(value, target_type)
         return target_type(value)
 
 

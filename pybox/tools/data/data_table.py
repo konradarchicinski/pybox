@@ -154,6 +154,16 @@ class DataTable:
         )
         return arrow_table
 
+    def to_parquet(self, file_name, directory):
+        """Store `DataTable` in the parquet format file.
+
+        Args:
+            file_name (str): name under which data structure will be saved.
+            directory (str): folder structure in which DataTable is to be saved.
+        """
+        from pybox.tools.data.data_flow import table_to_parquet
+        table_to_parquet(self, file_name, directory)
+
     def display(self, rows_number=10, display_type=None):
         """Display the contents of the current DataTable in rendered html format.
 
