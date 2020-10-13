@@ -1,76 +1,57 @@
 #!/usr/bin/env python
 from pybox.tools.scraper.news_reader import NewsReader
-from pybox.tools.data.data_helpers import to_date
-
-from time import sleep
-from selenium.webdriver.common.keys import Keys
+from pybox.tools.data.data_helpers import to_datetime
 
 
 class NewsReaderReuters(NewsReader):
     """[summary]"""
 
-    def __init__(self, start_date, reuters_page=None):
-        super().__init__()
-        self.start_date = to_date(start_date, "datetime")
-        if not reuters_page:
-            self.reuters_page = "https://www.reuters.com/theWire"
+    def __init__(self, main_web_page=None, min_news_date=None, max_news_date=None):
+        if not main_web_page:
+            main_web_page = "https://uk.reuters.com/news/archive"
+        super().__init__(main_web_page, min_news_date, max_news_date)
 
     @property
     def read_news_headlines(self):
         """[summary]"""
-        self.setup_driver(self.reuters_page)
-        self.accept_cookies
+        self.setup_driver(self.main_web_page)
+        self.accept_cookies(accept_button="_evidon-banner-acceptbutton")
+        self.main_window = self.driver.current_window_handle
 
-        main_window = self.driver.current_window_handle
-
-        stories = self.driver.find_elements_by_tag_name("article")
-        for story in stories:
-
-            story.find_element_by_tag_name("a").send_keys(
-                Keys.CONTROL + Keys.RETURN)
-
-            self.driver.switch_to.window(self.driver.window_handles[1])
-            self.retrive_headline_content
-
-            self.driver.close()
-            self.driver.switch_to.window(main_window)
+        self.last_story_date = self.max_news_date
+        while self.last_story_date >= self.min_news_date:
+            stories = self.driver.find_elements_by_tag_name("article")
+            for story in stories:
+                story_update_date = to_datetime(
+                    story.find_element_by_tag_name("time").text)
+                if self.max_news_date >= story_update_date:
+                    self.open_headline_in_new_tab(
+                        instance_to_open=story.find_element_by_tag_name("a"))
+                    self.switch_to_new_tab
+                    self.retrieve_story_content
+                    self.close_new_tab
+            self.move_to_next_page(navigation_button="control-nav-next")
 
         self.driver.close()
-        # TODO finish collecting articles:
-        #   - add switching to the next (archive) pages of headlines
-        #     until the scraper reaches the start date.
 
     @property
-    def retrive_headline_content(self):
+    def retrieve_story_content(self):
         """[summary]"""
-        info_bar = self.driver.find_element_by_css_selector(
+        story_info_bar = self.driver.find_element_by_css_selector(
             "div[class^='ArticleHeader']")
+        # TODO write an explanation.
+        time_tags = story_info_bar.find_elements_by_tag_name('time')[:2]
+        self.last_story_date = to_datetime(
+            " ".join([time.text for time in time_tags]))
 
-        time_tags = info_bar.find_elements_by_tag_name('time')[:2]
-        story_date = to_date(
-            " ".join([time.text for time in time_tags]), "datetime")
-        # TODO validate the date transformation.
-        if story_date > self.start_date:
-            label = info_bar.find_element_by_tag_name('a').text
-
+        if self.last_story_date >= self.min_news_date:
+            label = story_info_bar.find_element_by_tag_name('a').text
             headline = self.driver.find_element_by_css_selector(
                 "h1[class^='Headline']").text
-
             story_address = self.driver.current_url
-
             paragraphs = self.driver.find_elements_by_css_selector(
                 "p[class^='Paragraph']")
             body = "\n".join([p.text for p in paragraphs])
 
             self.news_data.insert_row(
-                [story_date, label, headline, story_address, body])
-
-    @property
-    def accept_cookies(self):
-        """Accepts page cookies usage."""
-        try:
-            sleep(3)
-            self.driver.find_element_by_id(
-                "_evidon-banner-acceptbutton").click()
-        except Exception:
-            pass
+                [self.last_story_date, label, headline, story_address, body])

@@ -1,18 +1,33 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import APP_PATH
 from pybox.tools.data.data_table import DataTable
+from pybox.tools.data.data_helpers import to_datetime
 
 import os
-from datetime import datetime
-from selenium import webdriver
-from importlib import import_module
 from abc import ABC, abstractproperty
+from datetime import datetime, date
+from importlib import import_module
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from time import sleep
 
 
 class NewsReader(ABC):
     """[summary]"""
 
-    def __init__(self):
+    def __init__(self, main_web_page, min_news_date=None, max_news_date=None):
+        self.main_web_page = main_web_page
+        if not max_news_date:
+            self.max_news_date = datetime.max
+        else:
+            self.max_news_date = to_datetime(max_news_date)
+        if not min_news_date:
+            self.min_news_date = to_datetime(date.today())
+        else:
+            self.min_news_date = to_datetime(min_news_date)
+
+        self.main_window = None
+
         self.news_data = DataTable(
             names=["Date", "Label", "Headline", "StoryAddress", "Body"],
             dtypes=[datetime, str, str, str, str])
@@ -49,12 +64,51 @@ class NewsReader(ABC):
         self.driver = webdriver.Chrome(APP_PATH + "/chromedriver.exe")
         self.driver.get(page_address)
 
-    @abstractproperty
+    def accept_cookies(self, accept_button):
+        """[summary]
+
+        Args:
+            accept_button ([type]): [description]
+        """
+        try:
+            sleep(3)
+            self.driver.find_element_by_id(accept_button).click()
+        except Exception:
+            pass
+
+    def open_headline_in_new_tab(self, instance_to_open):
+        """[summary]
+
+        Args:
+            instance_to_open ([type]): [description]
+        """
+        instance_to_open.send_keys(Keys.CONTROL + Keys.RETURN)
+
+    def move_to_next_page(self, navigation_button):
+        """[summary]
+
+        Args:
+            navigation_button ([type]): [description]
+        """
+        self.driver.find_element_by_class_name(navigation_button).click()
+
+    @property
+    def switch_to_new_tab(self):
+        """[summary]"""
+        self.driver.switch_to.window(self.driver.window_handles[1])
+
+    @property
+    def close_new_tab(self):
+        """[summary]"""
+        self.driver.close()
+        self.driver.switch_to.window(self.main_window)
+
+    @ abstractproperty
     def read_news_headlines(self):
         """[summary]"""
         pass
 
-    @abstractproperty
-    def retrive_headline_content(self):
+    @ abstractproperty
+    def retrieve_story_content(self):
         """[summary]"""
         pass
