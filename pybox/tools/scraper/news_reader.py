@@ -42,7 +42,8 @@ class NewsReader(ABC):
     def __init__(self, web_page, oldest_news_date=None, newest_news_date=None):
         self.web_page = web_page
         if not newest_news_date:
-            self.newest_news_date = datetime.max
+            self.newest_news_date = datetime.combine(
+                date.today(), datetime.max.time())
         else:
             self.newest_news_date = to_datetime(newest_news_date)
         if not oldest_news_date:

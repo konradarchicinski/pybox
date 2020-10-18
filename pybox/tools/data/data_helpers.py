@@ -4,7 +4,7 @@ from itertools import chain
 from bisect import bisect_left
 from operator import itemgetter
 from dateutil.parser import parse
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 
 def recognize_type(vector):
@@ -50,7 +50,15 @@ def to_datetime(date_input):
     elif isinstance(date_input, date):
         return datetime.combine(date_input, datetime.min.time())
     else:
-        return parse(date_input)
+        # TODO handle this issue properly.
+        time_deltas = {"BST": 1}
+        hour_delta = 0
+        for zone in time_deltas.keys():
+            if zone in date_input:
+                date_input = date_input.replace(zone, "")
+                hour_delta = time_deltas[zone]
+                break
+        return parse(date_input) + timedelta(hours=hour_delta)
 
 
 def change_type(value, target_type):
