@@ -8,6 +8,9 @@ from pathlib import Path
 
 APP_PATH = str(Path(os.path.realpath(__file__)).parents[1])
 
+# TODO needs to be replaced by `DATA_PATH`
+DATA_PATH = "".join([APP_PATH, "\\data\\"])
+EXTERNALS_PATH = "".join([APP_PATH, "\\ext\\"])
 DATASTORE_PATH = "".join([APP_PATH, "\\datastore\\"])
 DATALAKE_PATH = "".join([APP_PATH, "\\datalake\\"])
 TASKS_PATH = "".join([APP_PATH, "\\pybox\\tasks\\"])
