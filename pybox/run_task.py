@@ -95,39 +95,28 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("task_name", type=str)
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version="0.1")
-    parser.add_argument(
-        "-idir",
-        "--inputs_directory",
-        type=str,
-        default=DATASTORE_PATH)
-    parser.add_argument(
-        "-odir",
-        "--outputs_directory",
-        type=str,
-        default=DATASTORE_PATH)
-    parser.add_argument(
-        "-ti",
-        "--task_info",
-        action="store_const",
-        const=True,
-        default=False)
-    parser.add_argument(
-        "-a",
-        dest="arguments",
-        type=str,
-        action='append')
+    # TODO write about change - cmd removed special charcters like &
+    parser.add_argument("run_task_parameters", type=str)
+    parser_arg = parser.parse_args()
+    parameters_list = parser_arg.run_task_parameters.split(" -")
 
-    arguments = parser.parse_args()
+    task_name = parameters_list[0]
+    del parameters_list[0]
+    inputs_directory = DATASTORE_PATH
+    outputs_directory = DATASTORE_PATH
+    task_info = False
+    arguments = []
 
-    run_selected_module(
-        arguments.task_name,
-        arguments.inputs_directory,
-        arguments.outputs_directory,
-        arguments.task_info,
-        arguments.arguments)
+    for element in parameters_list:
+        arg_type, arg = element.split(" ")
+        if arg_type == "a":
+            arguments.append(arg)
+        elif arg_type == "ti":
+            task_info = True
+        elif arg_type == "idir":
+            inputs_directory = arg
+        elif arg_type == "odir":
+            outputs_directory = arg
+
+    run_selected_module(task_name, inputs_directory,
+                        outputs_directory, task_info, arguments)

@@ -2,7 +2,6 @@
 import ast
 import inspect
 import logging
-from datetime import datetime
 
 import pybox.run_task as brt
 import pybox.tools.data.data_flow as btddf
@@ -61,7 +60,11 @@ class TaskInit:
         """
         setting_name, setting_value = setting.split(":", 1)
         if setting_name in self.task_settings:
-            self.task_settings[setting_name] = ast.literal_eval(setting_value)
+            if isinstance(self.task_settings[setting_name], str):
+                self.task_settings[setting_name] = setting_value
+            else:
+                self.task_settings[setting_name] = ast.literal_eval(
+                    setting_value)
         else:
             raise ValueError(
                 f"`{setting_name}` has not been found in task settings.")

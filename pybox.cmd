@@ -21,5 +21,5 @@ CALL ipython
 GOTO execute
 
 :run_task
-CALL python -m pybox.run_task %args%
+CALL python -m pybox.run_task "%args%"
 GOTO execute
