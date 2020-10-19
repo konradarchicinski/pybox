@@ -17,10 +17,15 @@ from time import sleep
 
 
 def emergency_data_protector(function):
-    """[summary]
+    """Decorator used to secure the collected data in a given function.
 
-    Args:
-        function ([type]): [description]
+    While scraping the website, many unexpected exceptions can appear,
+    the encountered error stops the program and contributes to the loss
+    of previously scraped information.
+
+    This decorator wraps a given function by a try statement, which,
+    when an error is encountered before the program exits, saves
+    the data previously collected into the drive.
     """
 
     def wrapper(self, *args, **kwargs):
@@ -28,7 +33,7 @@ def emergency_data_protector(function):
             function(self, *args, **kwargs)
         except Exception:
             exception_traceback = traceback.format_exc()
-            self._news_to_parquet(self.last_story_date)
+            self.news_to_parquet(ending_date=self.last_story_date)
             logging.error(
                 "Occurred error, collected stories were saved in data folder.")
             print(exception_traceback)
@@ -37,7 +42,15 @@ def emergency_data_protector(function):
 
 
 class NewsReader(ABC):
-    """[summary]"""
+    """Abstract class used for news scraping from several different sites.
+
+    Currently implemented news services are: 
+
+        - Reuters
+
+    To initialize a class of a suitable service, one need use the `initiate`
+    staticmethod and pass the name of the service as an source argument.
+    """
 
     def __init__(self, web_page, oldest_news_date=None, newest_news_date=None):
         self.web_page = web_page
@@ -57,11 +70,23 @@ class NewsReader(ABC):
 
     @staticmethod
     def initiate(source, reader_settings=None):
-        """[summary]
+        """Return a class instance of a reader implementation for a supplied
+        news site source.
+
+        This staticmethod is used to initiate the specific news site implementation
+        of the `NewsReader` class. To specify the functionality of a reader,
+        a function can be provided with a series of settings supported by the
+        selected implementation. The settings should be passed in a dictionary
+        as in the example below:
+
+            NewsReader.initiate('Reuters', {'PageType': 'marketsnews'})
 
         Args:
-            source ([type]): [description]
-            reader_settings ([type], optional): [description]. Defaults to None.
+
+            source (str): name of the news site whose implementation
+                is to be instantiated.
+            reader_settings (dict, optional): implementation settings,
+                which allow to control reader actions. Defaults to None.
         """
         if not reader_settings:
             reader_settings = dict()
@@ -71,13 +96,12 @@ class NewsReader(ABC):
                 child_classes = NewsReader.__subclasses__()
                 # TODO rather check name standard = `NewsReader{Source}`.
                 if len(child_classes) > 1:
-                    raise ValueError(
-                        f"Module `{module}` has been inspected",
-                        "there was more than one class inside it,",
-                        "therefore, it is wrongly constructed."
-                    )
-
-                # Transforming all camel case keys to snake case.
+                    raise ValueError((
+                        f"Module `{module}` has been inspected"
+                        "there was more than one class inside it,"
+                        "therefore, it is wrongly constructed."))
+                # Transforming all camel case keys to snake case, which enables
+                # a function to understand keys as arguments.
                 reader_settings = {
                     re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower(): value
                     for key, value in reader_settings.items()
@@ -87,7 +111,10 @@ class NewsReader(ABC):
     @abstractproperty
     @emergency_data_protector
     def read_news_headlines(self):
-        """[summary]"""
+        """Class property, which locates a list of news headlines on the provided
+        website, iterates over them, selecting only those whose publication
+        date is within the specified date range initialized in class settings.
+        """
         pass
 
     @abstractproperty
@@ -96,45 +123,6 @@ class NewsReader(ABC):
         story and saves them in a DataTable object named `news_data`.
         """
         pass
-
-    def save_story(self, story_date, label, headline, story_address, body):
-        """[summary]
-
-        Args:
-            story_date ([type]): [description]
-            label ([type]): [description]
-            headline ([type]): [description]
-            story_address ([type]): [description]
-            body ([type]): [description]
-        """
-        self.news_data.insert_row(
-            [story_date, label, headline, story_address, body])
-
-        if len(headline) > 50:
-            truncated_headline = f"{headline[:50]}.."
-        else:
-            truncated_headline = headline + " "*(52-len(headline))
-        logging.info(
-            f"{truncated_headline} from {story_date.strftime('%Y-%m-%d %H:%M')} stored")
-
-    def news_to_parquet(self, directory):
-        """[summary]
-
-        Args:
-            directory ([type], optional): [description]. Defaults to DATA_PATH.
-        """
-        self._news_to_parquet(
-            self,
-            self.oldest_news_date,
-            directory)
-
-    def _news_to_parquet(self, ending_date, directory=DATA_PATH):
-        file_name = "".join([
-            self.source_indicator, "(",
-            self.newest_news_date.strftime("%Y_%m_%d_%H_%M"), ",",
-            ending_date.strftime("%Y_%m_%d_%H_%M"), ")"
-        ])
-        self.news_data.to_parquet(file_name, directory)
 
     def setup_driver(self, page_address):
         """[summary]
@@ -185,6 +173,42 @@ class NewsReader(ABC):
         """
         logging.warning(
             f"There has been problem with storage of story:\n\t{story_link}")
+
+    def collect_story(self, story_date, label, headline, story_address, body):
+        """[summary]
+
+        Args:
+            story_date ([type]): [description]
+            label ([type]): [description]
+            headline ([type]): [description]
+            story_address ([type]): [description]
+            body ([type]): [description]
+        """
+        self.news_data.insert_row(
+            [story_date, label, headline, story_address, body])
+
+        if len(headline) > 50:
+            truncated_headline = f"{headline[:50]}.."
+        else:
+            truncated_headline = headline + " "*(52-len(headline))
+        logging.info(
+            f"{truncated_headline} from {story_date.strftime('%Y-%m-%d %H:%M')} stored")
+
+    def news_to_parquet(self, ending_date=None, data_directory=DATA_PATH):
+        """[summary]
+
+        Args:
+            ending_date ([type], optional): [description]. Defaults to None.
+            data_directory ([type], optional): [description]. Defaults to DATA_PATH.
+        """
+        if not ending_date:
+            ending_date = self.oldest_news_date
+        file_name = "".join([
+            self.source_indicator, "(",
+            self.newest_news_date.strftime("%Y_%m_%d_%H_%M"), ",",
+            ending_date.strftime("%Y_%m_%d_%H_%M"), ")"
+        ])
+        self.news_data.to_parquet(file_name, data_directory)
 
     @property
     def switch_to_new_tab(self):

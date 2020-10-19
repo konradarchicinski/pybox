@@ -37,8 +37,8 @@ class NewsReaderReuters(NewsReader):
     @property
     @emergency_data_protector
     def read_news_headlines(self):
-        """Class property, which locates a list of news headlines on the
-        provided website, iterates over them, looking at those whose publication
+        """Class property, which locates a list of news headlines on the provided
+        website, iterates over them, selecting only those whose publication
         date is within the specified date range initialized in class settings.
         """
         self.setup_driver(self.web_page)
@@ -106,7 +106,7 @@ class NewsReaderReuters(NewsReader):
                     "p[class^='Paragraph']")
                 body = "\n".join([p.text for p in paragraphs])
 
-                self.save_story(self.last_story_date, label,
-                                headline, story_address, body)
+                self.collect_story(self.last_story_date, label,
+                                   headline, story_address, body)
         except Exception:
             self.handle_story_exception(story_address)

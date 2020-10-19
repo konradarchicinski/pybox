@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import DATALAKE_PATH
+from pybox.GLOBALS import DATA_PATH
 from pybox.tools.task import TaskInit
 from pybox.tools.scraper.news_reader import NewsReader
 
@@ -12,6 +12,7 @@ def scrap_news(settings):
     in the settings.
 
     Args:
+
         settings (dict): contains settings of this task.
     """
     source = settings["Source"]
@@ -20,7 +21,7 @@ def scrap_news(settings):
 
     reader = NewsReader.initiate(source, reader_settings)
     reader.read_news_headlines
-    reader.news_to_parquet(DATALAKE_PATH)
+    reader.news_to_parquet(data_directory=DATA_PATH)
 
 
 task = TaskInit(
