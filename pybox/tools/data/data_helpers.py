@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import re
 from sys import getsizeof
 from itertools import chain
 from bisect import bisect_left
@@ -129,3 +130,23 @@ def byte_size(measurable_object):
                 break
         return size
     return _sizeof(measurable_object)
+
+
+def camel_to_snake_case(string):
+    """Transform provided value from CamelCase format to snake_case.
+
+    Args:
+
+        string (str): string to be transformed.
+    """
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', string).lower()
+
+
+def snake_to_camel_case(string):
+    """Transform provided value from snake_case format to CamelCase.
+
+    Args:
+
+        string (str): string to be transformed.
+    """
+    return ''.join(component.title() for component in string.split('_'))
