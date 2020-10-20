@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import EXTERNALS_PATH, DATA_PATH
 from pybox.tools.data.data_table import DataTable
-from pybox.tools.data.data_helpers import to_datetime
+from pybox.tools.data.data_helpers import to_datetime, camel_to_snake_case
 
 import logging
 import os
-import re
 import sys
 import traceback
 from abc import ABC, abstractproperty
@@ -93,42 +92,42 @@ class NewsReader(ABC):
         for module in os.listdir(os.path.dirname(__file__)):
             if module == f"news_reader_{source.lower()}.py":
                 import_module(f".{module[:-3]}", __package__)
-                child_classes = NewsReader.__subclasses__()
-                # TODO rather check name standard = `NewsReader{Source}`.
-                if len(child_classes) > 1:
-                    raise ValueError((
-                        f"Module `{module}` has been inspected"
-                        "there was more than one class inside it,"
-                        "therefore, it is wrongly constructed."))
-                # Transforming all camel case keys to snake case, which enables
-                # a function to understand keys as arguments.
-                reader_settings = {
-                    re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower(): value
-                    for key, value in reader_settings.items()
-                }
-                return child_classes[0](**reader_settings)
+                children = NewsReader.__subclasses__()
+                for child in children:
+                    if child.__name__ == f"NewsReader{source}":
+                        reader_settings = {camel_to_snake_case(key): value
+                                           for key, value in reader_settings.items()}
+                        return child(**reader_settings)
+                    else:
+                        raise ValueError((
+                            f"Module `{module}` has been inspected but no proper"
+                            " implementation of `NewsReader` was found there."))
+        raise ValueError(
+            f"No suitable NewsReader implementation was found for `{source}`.")
 
     @abstractproperty
     @emergency_data_protector
     def read_news_headlines(self):
-        """Class property, which locates a list of news headlines on the provided
-        website, iterates over them, selecting only those whose publication
-        date is within the specified date range initialized in class settings.
+        """Locate a list of news headlines on the provided website, iterate
+        over them, selecting only those whose publication date is within
+        the specified date range initialized in class settings.
         """
         pass
 
     @abstractproperty
     def retrieve_story_content(self):
-        """Class property which extracts the detailed parts of a specific
-        story and saves them in a DataTable object named `news_data`.
+        """Extract the detailed parts of a specific story and saves them
+        in the DataTable object named `news_data`.
         """
         pass
 
     def setup_driver(self, page_address):
-        """[summary]
+        """Setup Selenium WebDriver which drives a browser natively, as a user
+        would, either locally or on a remote machine using the Selenium server.
 
         Args:
-            page_address (str): [description]
+
+            page_address (str): address of the website to open by the driver.
         """
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -136,53 +135,70 @@ class NewsReader(ABC):
             EXTERNALS_PATH + "/chromedriver.exe", options=options)
         self.driver.get(page_address)
 
-    def accept_cookies(self, accept_button):
-        """[summary]
+    def accept_cookies(self, acceptance_button):
+        """Find on the website banner displayed regarding the use of cookies
+        and accept its terms.
 
         Args:
-            accept_button ([type]): [description]
+
+            accept_button (str): id tag of the cookies acceptance button.
         """
         try:
             sleep(2)
-            self.driver.find_element_by_id(accept_button).click()
+            self.driver.find_element_by_id(acceptance_button).click()
         except Exception:
             pass
 
-    def open_headline_in_new_tab(self, instance_to_open):
-        """[summary]
+    def open_headline_in_new_tab(self, thumbnail):
+        """Open provided headline from hyperlink hidden in thumbnail.
+        Headline is opened in a new browser tab in the background.
 
         Args:
-            instance_to_open ([type]): [description]
+
+            thumbnail (selenium object): page fragment containing story thumbnail.
         """
-        instance_to_open.send_keys(Keys.CONTROL + Keys.RETURN)
+        thumbnail.find_element_by_tag_name(
+            "a").send_keys(Keys.CONTROL + Keys.RETURN)
 
-    def move_to_next_page(self, navigation_button):
-        """[summary]
+    def go_to_next_page(self, navigation_button):
+        """Move to the next page of the website using the navigation button.
 
         Args:
-            navigation_button ([type]): [description]
+
+            navigation_button (str): name of the class assigned to the
+                navigation button that launches the next page.
         """
         self.driver.find_element_by_class_name(navigation_button).click()
         sleep(2)
 
-    def handle_story_exception(self, story_link):
-        """[summary]
+    def handle_story_exception(self, story_link, story_problems=None):
+        """Handle missing items of given story allowing the program to continue
+        without interruption.
 
         Args:
-            story_link ([type]): [description]
+
+            story_link (str): story web address.
+            story_problems (list, optional): list of story items names for which
+                problems occurred. Defaults to None.
         """
+        if story_problems:
+            info_fragment = ", ".join(story_problems)
+        else:
+            info_fragment = "storage"
         logging.warning(
-            f"There has been problem with storage of story:\n\t{story_link}")
+            f"There has been problem with {info_fragment} of a story:\n\t{story_link}")
 
     def collect_story(self, story_date, label, headline, story_address, body):
-        """[summary]
+        """Collect items from the story, add them to the DataTable `news_data`
+        and display the success log message.
 
         Args:
-            story_date ([type]): [description]
-            label ([type]): [description]
-            headline ([type]): [description]
-            story_address ([type]): [description]
-            body ([type]): [description]
+
+            story_date (datetime): date with time of publication of the story.
+            label (str): story label.
+            headline (str): story headline.
+            story_address (str): story web address.
+            body (str): main story content.
         """
         self.news_data.insert_row(
             [story_date, label, headline, story_address, body])
@@ -195,11 +211,16 @@ class NewsReader(ABC):
             f"{truncated_headline} from {story_date.strftime('%Y-%m-%d %H:%M')} stored")
 
     def news_to_parquet(self, ending_date=None, data_directory=DATA_PATH):
-        """[summary]
+        """Save collected data from `data_news` to a parquet file in the
+        given location. The file will be saved under a name:
+            `source_indicator(starting_date,ending_date)`.
 
         Args:
-            ending_date ([type], optional): [description]. Defaults to None.
-            data_directory ([type], optional): [description]. Defaults to DATA_PATH.
+
+            ending_date (datetime, optional): date of the oldest collected story,
+                used only in emergency data storing. Defaults to None.
+            data_directory (str, optional): directory under which the file will
+                be saved. Defaults to DATA_PATH.
         """
         if not ending_date:
             ending_date = self.oldest_news_date
@@ -212,11 +233,11 @@ class NewsReader(ABC):
 
     @property
     def switch_to_new_tab(self):
-        """[summary]"""
+        """Switch the browser tab to the nearest open one."""
         self.driver.switch_to.window(self.driver.window_handles[1])
 
     @property
     def close_new_tab(self):
-        """[summary]"""
+        """Close the newly opened browser tab with the focus on it."""
         self.driver.close()
         self.driver.switch_to.window(self.main_window)

@@ -37,12 +37,12 @@ class NewsReaderReuters(NewsReader):
     @property
     @emergency_data_protector
     def read_news_headlines(self):
-        """Class property, which locates a list of news headlines on the provided
-        website, iterates over them, selecting only those whose publication
-        date is within the specified date range initialized in class settings.
+        """Locate a list of news headlines on the provided website, iterate
+        over them, selecting only those whose publication date is within
+        the specified date range initialized in class settings.
         """
         self.setup_driver(self.web_page)
-        self.accept_cookies(accept_button="_evidon-banner-acceptbutton")
+        self.accept_cookies(acceptance_button="_evidon-banner-acceptbutton")
 
         # The variable is initially assigned the value of the boundary
         # of the considered date range of articles. In the further part
@@ -64,22 +64,21 @@ class NewsReaderReuters(NewsReader):
                 # Each article is pre-checked for publication date before opening.
                 # If date is outside the class's date range, the article is skipped.
                 if self.newest_news_date > last_viewed_story_date >= self.oldest_news_date:
-                    self.open_headline_in_new_tab(
-                        instance_to_open=story.find_element_by_tag_name("a"))
+                    self.open_headline_in_new_tab(thumbnail=story)
                     self.switch_to_new_tab
                     self.retrieve_story_content
                     self.close_new_tab
-            self.move_to_next_page(navigation_button="control-nav-next")
+            self.go_to_next_page(navigation_button="control-nav-next")
 
         self.driver.close()
 
     @property
     def retrieve_story_content(self):
-        """Class property which extracts the detailed parts of a specific
-        story and saves them in a DataTable object named `news_data`.
+        """Extract the detailed parts of a specific story and saves them
+        in the DataTable object named `news_data`.
 
-        Its scope is to find story elements on the webpage such as:
-        datetime, label, headline, page address and text body.
+        Contents of a specified story may be: datetime, label, headline,
+        page address and text body.
         """
         story_address = self.driver.current_url
         try:
@@ -99,14 +98,31 @@ class NewsReaderReuters(NewsReader):
                 # worked in both cases. In the info bar, the label is separated
                 # by the `\n` sign, therefore dividing the entire bar with its
                 # help enables a simple and universal selection of the label.
-                label = story_info_bar.text.split("\n", 1)[0]
-                headline = self.driver.find_element_by_css_selector(
-                    "h1[class^='Headline']").text
-                paragraphs = self.driver.find_elements_by_css_selector(
-                    "p[class^='Paragraph']")
-                body = "\n".join([p.text for p in paragraphs])
 
-                self.collect_story(self.last_story_date, label,
-                                   headline, story_address, body)
+                # story_date, label, headline, story_address, body
+                content = {"story_date": self.last_story_date,
+                           "story_address": story_address}
+
+                content["label"] = story_info_bar.text.split("\n", 1)[0]
+                content["headline"] = self.driver.find_element_by_css_selector(
+                    "h1[class^='Headline']").text
+
+                body_wrapper = self.driver.find_element_by_css_selector(
+                    "div[class*='ArticleBodyWrapper']")
+                # In most cases, article texts are stored either in paragraphs
+                # or in preformatted text, table-like tags.
+                paragraphs = body_wrapper.find_elements_by_css_selector(
+                    "p[class^='Paragraph']")
+                preformatteds = body_wrapper.find_elements_by_tag_name("pre")
+                content["body"] = "\n".join(
+                    [p.text for p in paragraphs + preformatteds])
+
+                story_problems = [key for key, value
+                                  in content.items() if not value]
+                if story_problems:
+                    self.handle_story_exception(story_address, story_problems)
+
+                self.collect_story(**content)
+
         except Exception:
             self.handle_story_exception(story_address)
