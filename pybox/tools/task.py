@@ -59,6 +59,8 @@ class TaskInit:
                 overwrite with the new settings value.
         """
         setting_name, setting_value = setting.split(":", 1)
+        setting_value = setting_value.strip("\'")
+
         if setting_name in self.task_settings:
             if isinstance(self.task_settings[setting_name], str):
                 self.task_settings[setting_name] = setting_value

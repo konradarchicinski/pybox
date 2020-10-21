@@ -2,6 +2,7 @@
 from pybox.GLOBALS import TASKS_PATH, DATASTORE_PATH
 
 import os
+import re
 import ast
 import runpy
 import argparse
@@ -95,28 +96,35 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # TODO write about change - cmd removed special charcters like &
+    # Using one argument instead of the multiple argaprse ones
+    # is to minimize the risk of encountering escape characters
+    # in one of the arguments provided on the command line.
     parser.add_argument("run_task_parameters", type=str)
     parser_arg = parser.parse_args()
-    parameters_list = parser_arg.run_task_parameters.split(" -")
+
+    parameters_list = re.split(
+        ''' -(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+        parser_arg.run_task_parameters)
 
     task_name = parameters_list[0]
     del parameters_list[0]
+
     inputs_directory = DATASTORE_PATH
     outputs_directory = DATASTORE_PATH
     task_info = False
     arguments = []
 
     for element in parameters_list:
-        arg_type, arg = element.split(" ")
-        if arg_type == "a":
-            arguments.append(arg)
-        elif arg_type == "ti":
+        if element.startswith("ti"):
             task_info = True
-        elif arg_type == "idir":
-            inputs_directory = arg
-        elif arg_type == "odir":
-            outputs_directory = arg
+        else:
+            arg_type, arg = element.split(" ", 1)
+            if arg_type == "a":
+                arguments.append(arg)
+            elif arg_type == "idir":
+                inputs_directory = arg
+            elif arg_type == "odir":
+                outputs_directory = arg
 
     run_selected_module(task_name, inputs_directory,
                         outputs_directory, task_info, arguments)
