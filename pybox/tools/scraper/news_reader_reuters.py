@@ -1,128 +1,128 @@
 #!/usr/bin/env python
+from pybox.tools.date_helpers import to_datetime, create_dates_list
+from pybox.tools.data.data_flow import dict_from_xml
 from pybox.tools.scraper.news_reader import NewsReader, emergency_data_protector
-from pybox.tools.data.data_helpers import to_datetime
 
 
 class NewsReaderReuters(NewsReader):
-    """The class is `NewsReader` implementation for the Reuters website.
+    """The class is a `NewsReader` implementation for the Reuters website.
 
-    It is used to collect and save news from particular Reuters subpages.
+    It is used to collect and save news from particular Reuters page.
     The class can be provided with a set of settings specifying its action.
     However, it is an optional functionality.
 
     Acceptable setting:
 
-        - WebPage (str): full link of the page from which the collection
-            of the news will be started.
-        - PageType (str): type that helps identify Reuters subpage without
-            using the full link. The proven page types are: `businessnews`,
-            `marketsnews`, `worldnews`, `technologynews`, `lifestylemolt`.
         - OldestNewsDate (str, date): date specifying the date of the last
-            accepted article.
+            accepted news.
         - NewestNewsDate (str, date): date specifying the date of the most
-            recent acceptable article.
+            recent acceptable news.
     """
-
-    def __init__(self, page_type=None, web_page=None,
-                 oldest_news_date=None, newest_news_date=None):
-        if not page_type:
-            page_type = ""
-        if not web_page:
-            web_page = f"https://uk.reuters.com/news/archive/{page_type}"
-
-        self.source_indicator = f"Reuters{page_type.title()}"
-
-        super().__init__(web_page, oldest_news_date, newest_news_date)
 
     @property
     @emergency_data_protector
-    def read_news_headlines(self):
-        """Locate a list of news headlines on the provided website, iterate
-        over them, selecting only those whose publication date is within
-        the specified date range initialized in class settings.
+    def read_news(self):
+        """Locate a list of news headlines on the provided website and store them
+        in DATA_PATH folder. Function iterates over found healines list, selecting
+        only those whose publication date is within the specified date range
+        initialized in class settings.
         """
-        self.setup_driver(self.web_page)
-        self.accept_cookies(acceptance_button="_evidon-banner-acceptbutton")
-
-        # The variable is initially assigned the value of the boundary
-        # of the considered date range of articles. In the further part
-        # of the code it will be overwritten multiple times.
-        last_viewed_story_date = self.newest_news_date
-
-        while last_viewed_story_date >= self.oldest_news_date:
-            self.main_window = self.driver.current_window_handle
-            # Links to articles may appear in different places of the page,
-            # but from the perspective of this class, only one from the
-            # headlines list are interesting. Therefore, first a list of
-            # headlines is searched and only from it individual articles
-            # are selected.
-            stories_list = self.driver.find_element_by_class_name(
-                "news-headline-list").find_elements_by_tag_name("article")
-            for story in stories_list:
-                last_viewed_story_date = to_datetime(
-                    story.find_element_by_tag_name("time").text)
-                # Each article is pre-checked for publication date before opening.
-                # If date is outside the class's date range, the article is skipped.
-                if self.newest_news_date > last_viewed_story_date >= self.oldest_news_date:
-                    self.open_headline_in_new_tab(thumbnail=story)
-                    self.switch_to_new_tab
-                    self.retrieve_story_content
-                    self.close_new_tab
-            self.go_to_next_page(navigation_button="control-nav-next")
-
-        self.driver.close()
+        # TODO create functionality.
+        return "Functionality has not been implemented yet."
 
     @property
-    def retrieve_story_content(self):
-        """Extract the detailed parts of a specific story and saves them
+    @emergency_data_protector
+    def read_archival_news(self):
+        """Locate a list of news headlines from the xml sitemap data of provided
+        webpage source and store them in DATA_PATH folder. Only those articles
+        whose last modification date is within the specified date range,
+        initialized in class settings, are stored.
+        """
+        self.setup_driver(main_page="https://www.reuters.com/",
+                          driver_type="Edge")
+
+        for web_address in self.xml_web_addresses:
+            news_info_list = dict_from_xml(web_address, branch="/urlset/url")
+
+            for news_info in news_info_list:
+                self.news_content = dict()
+                self.news_content["page_address"] = news_info["loc"]
+                self.news_content["last_modification_date"] = to_datetime(
+                    news_info["lastmod"])
+                self.open_in_new_tab(self.news_content["page_address"])
+                self.retrieve_news_content
+                self.store_news(**self.news_content)
+                self.close_new_tab
+
+        self.driver.quit()
+
+    @property
+    def retrieve_news_content(self):
+        """Extract the detailed parts of a specific news and saves them
         in the DataTable object named `news_data`.
 
-        Contents of a specified story may be: datetime, label, headline,
-        page address and text body.
+        The collected content of a specific article may be: page_address,
+        last_modification_date, publishing_date, label, headline and body.
         """
-        story_address = self.driver.current_url
         try:
-            story_info_bar = self.driver.find_element_by_css_selector(
+            news_info_bar = self.driver.find_element_by_css_selector(
                 "div[class*='ArticleHeader']")
             # Usually there are three `time` tags in this part of page.
             # The first is a date, the second is a time and the third
             # determines the time since the last update. By default,
             # only first two are interesting.
-            time_tags = story_info_bar.find_elements_by_tag_name('time')[:2]
-            self.last_story_date = to_datetime(
+            time_tags = news_info_bar.find_elements_by_tag_name('time')[:2]
+            self.news_content["publishing_date"] = to_datetime(
                 " ".join([time.text for time in time_tags]))
 
-            if self.newest_news_date > self.last_story_date >= self.oldest_news_date:
-                # In some articles the label can be found under the `a` tag,
-                # in others it is under the `p` tag. Determining it as follows
-                # worked in both cases. In the info bar, the label is separated
-                # by the `\n` sign, therefore dividing the entire bar with its
-                # help enables a simple and universal selection of the label.
+            # In some articles the label can be found under the `a` tag,
+            # in others it is under the `p` tag. Determining it as follows
+            # worked in both cases. In the info bar, the label is separated
+            # by the `\n` sign, therefore dividing the entire bar with its
+            # help enables a simple and universal selection of the label.
+            self.news_content["label"] = news_info_bar.text.split("\n", 1)[0]
+            self.news_content["headline"] = self.driver.find_element_by_css_selector(
+                "h1[class^='Headline']").text
 
-                # story_date, label, headline, story_address, body
-                content = {"story_date": self.last_story_date,
-                           "story_address": story_address}
+            body_wrapper = self.driver.find_element_by_css_selector(
+                "div[class*='ArticleBodyWrapper']")
+            # In most cases, article texts are stored either in paragraphs
+            # or in preformatted text, table-like tags.
+            paragraphs = body_wrapper.find_elements_by_css_selector(
+                "p[class^='Paragraph']")
+            preformatteds = body_wrapper.find_elements_by_tag_name("pre")
+            self.news_content["body"] = "\n".join(
+                [p.text for p in paragraphs + preformatteds])
 
-                content["label"] = story_info_bar.text.split("\n", 1)[0]
-                content["headline"] = self.driver.find_element_by_css_selector(
-                    "h1[class^='Headline']").text
-
-                body_wrapper = self.driver.find_element_by_css_selector(
-                    "div[class*='ArticleBodyWrapper']")
-                # In most cases, article texts are stored either in paragraphs
-                # or in preformatted text, table-like tags.
-                paragraphs = body_wrapper.find_elements_by_css_selector(
-                    "p[class^='Paragraph']")
-                preformatteds = body_wrapper.find_elements_by_tag_name("pre")
-                content["body"] = "\n".join(
-                    [p.text for p in paragraphs + preformatteds])
-
-                story_problems = [key for key, value
-                                  in content.items() if not value]
-                if story_problems:
-                    self.handle_story_exception(story_address, story_problems)
-
-                self.collect_story(**content)
+            news_problems = [key for key,
+                             value in self.news_content.items() if not value]
+            if news_problems:
+                self.handle_news_exception(
+                    self.news_content["page_address"], news_problems)
 
         except Exception:
-            self.handle_story_exception(story_address)
+            self.handle_news_exception(self.news_content["page_address"])
+
+    @property
+    def xml_web_addresses(self):
+        """Return a list of xml web addresses from Reuters archives.
+
+        The content of each xml file located at a given address is a basic
+        information about all articles published on a given day.
+
+        E.g. mentioned link with the information about all articles posted
+        on Reuters on 2020-01-01 looks like:
+
+            `https://www.reuters.com/sitemap_20200101-20200102.xml`
+        """
+        dates_list = create_dates_list(
+            self.newest_news_date, self.oldest_news_date)
+
+        addresses = list()
+        for idx in range(len(dates_list)-1):
+            xml_web_address = (
+                "https://www.reuters.com/sitemap_"
+                f"{dates_list[idx+1].strftime('%Y%m%d')}-"
+                f"{dates_list[idx].strftime('%Y%m%d')}.xml")
+            addresses.append(xml_web_address)
+        return addresses

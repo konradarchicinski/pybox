@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+from pybox.tools.date_helpers import to_date, to_datetime
+
 import re
 from sys import getsizeof
 from itertools import chain
 from bisect import bisect_left
 from operator import itemgetter
-from dateutil.parser import parse
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 
 def recognize_type(vector):
@@ -24,42 +25,6 @@ def recognize_type(vector):
         vector_types.items(),
         key=itemgetter(1))[0]
     return recognized_type
-
-
-def to_date(date_input):
-    """Return date object created from supplied input.
-
-    Args:
-        date_input (str, date-like): value to be transformed.
-    """
-    if date_input is None:
-        return None
-    elif isinstance(date_input, datetime):
-        return date_input.date()
-    else:
-        return parse(date_input, default=date.min)
-
-
-def to_datetime(date_input):
-    """Return datetime object created from supplied input.
-
-    Args:
-        date_input (str, date-like): value to be transformed.
-    """
-    if date_input is None:
-        return None
-    elif isinstance(date_input, date):
-        return datetime.combine(date_input, datetime.min.time())
-    else:
-        # TODO handle this issue properly.
-        time_deltas = {"BST": 1}
-        hour_delta = 0
-        for zone in time_deltas.keys():
-            if zone in date_input:
-                date_input = date_input.replace(zone, "")
-                hour_delta = time_deltas[zone]
-                break
-        return parse(date_input) + timedelta(hours=hour_delta)
 
 
 def change_type(value, target_type):

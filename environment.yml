@@ -20,8 +20,11 @@ dependencies:
   - bs4
   - tqdm
   - pyyaml
+  - lxml
   - pip:
     - pep8
     - autopep8
     - torchtext
+    - xmltodict
+    - msedge-selenium-tools
   

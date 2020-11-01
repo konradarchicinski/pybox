@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import EXTERNALS_PATH, DATA_PATH
+from pybox.tools.date_helpers import to_datetime
 from pybox.tools.data.data_table import DataTable
-from pybox.tools.data.data_helpers import to_datetime, camel_to_snake_case
+from pybox.tools.data.data_helpers import camel_to_snake_case
 
 import logging
 import os
-import sys
 import traceback
+import sys
 from abc import ABC, abstractproperty
 from datetime import datetime, date
 from importlib import import_module
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from time import sleep
+from selenium.webdriver import Chrome, ChromeOptions
+from msedge.selenium_tools import Edge, EdgeOptions
 
 
 def emergency_data_protector(function):
@@ -24,7 +24,7 @@ def emergency_data_protector(function):
 
     This decorator wraps a given function by a try statement, which,
     when an error is encountered before the program exits, saves
-    the data previously collected into the drive.
+    the previously collected data into the drive.
     """
 
     def wrapper(self, *args, **kwargs):
@@ -32,7 +32,7 @@ def emergency_data_protector(function):
             function(self, *args, **kwargs)
         except Exception:
             exception_traceback = traceback.format_exc()
-            self.news_to_parquet(ending_date=self.last_story_date)
+            self.news_to_parquet()
             logging.error(
                 "Occurred error, collected stories were saved in data folder.")
             print(exception_traceback)
@@ -51,8 +51,7 @@ class NewsReader(ABC):
     staticmethod and pass the name of the service as an source argument.
     """
 
-    def __init__(self, web_page, oldest_news_date=None, newest_news_date=None):
-        self.web_page = web_page
+    def __init__(self, oldest_news_date=None, newest_news_date=None):
         if not newest_news_date:
             self.newest_news_date = datetime.combine(
                 date.today(), datetime.max.time())
@@ -64,8 +63,9 @@ class NewsReader(ABC):
             self.oldest_news_date = to_datetime(oldest_news_date)
 
         self.news_data = DataTable(
-            names=["Date", "Label", "Headline", "StoryAddress", "Body"],
-            dtypes=[datetime, str, str, str, str])
+            names=["PageAddress", "LastModificationDate",
+                   "PublishingDate", "Label", "Headline", "Body"],
+            dtypes=[str, datetime, datetime, str, str, str])
 
     @staticmethod
     def initiate(source, reader_settings=None):
@@ -97,7 +97,9 @@ class NewsReader(ABC):
                     if child.__name__ == f"NewsReader{source}":
                         reader_settings = {camel_to_snake_case(key): value
                                            for key, value in reader_settings.items()}
-                        return child(**reader_settings)
+                        scraper = child(**reader_settings)
+                        scraper.source = source
+                        return scraper
                     else:
                         raise ValueError((
                             f"Module `{module}` has been inspected but no proper"
@@ -107,133 +109,68 @@ class NewsReader(ABC):
 
     @abstractproperty
     @emergency_data_protector
-    def read_news_headlines(self):
-        """Locate a list of news headlines on the provided website, iterate
-        over them, selecting only those whose publication date is within
-        the specified date range initialized in class settings.
+    def read_news(self):
+        """Locate a list of news headlines on the provided website and store them
+        in DATA_PATH folder. Function iterates over found healines list, selecting
+        only those whose publication date is within the specified date range
+        initialized in class settings.
         """
         pass
 
     @abstractproperty
-    def retrieve_story_content(self):
-        """Extract the detailed parts of a specific story and saves them
+    @emergency_data_protector
+    def read_archival_news(self):
+        """Locate a list of news headlines from the xml sitemap data of provided
+        webpage source and store them in DATA_PATH folder. Only those articles
+        whose last modification date is within the specified date range,
+        initialized in class settings, are stored.
+        """
+        pass
+
+    @abstractproperty
+    def retrieve_news_content(self):
+        """Extract the detailed parts of a specific news and saves them
         in the DataTable object named `news_data`.
         """
         pass
 
-    def setup_driver(self, page_address):
+    def setup_driver(self, main_page, driver_type="Chrome"):
         """Setup Selenium WebDriver which drives a browser natively, as a user
         would, either locally or on a remote machine using the Selenium server.
 
         Args:
 
-            page_address (str): address of the website to open by the driver.
+            main_page(str): main page address.
+            driver_type (str): name of used driver, Chrome or Edge.
         """
-        options = webdriver.ChromeOptions()
-        options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        self.driver = webdriver.Chrome(
-            EXTERNALS_PATH + "/chromedriver.exe", options=options)
-        self.driver.get(page_address)
-
-    def accept_cookies(self, acceptance_button):
-        """Find on the website banner displayed regarding the use of cookies
-        and accept its terms.
-
-        Args:
-
-            accept_button (str): id tag of the cookies acceptance button.
-        """
-        try:
-            sleep(2)
-            self.driver.find_element_by_id(acceptance_button).click()
-        except Exception:
-            pass
-
-    def open_headline_in_new_tab(self, thumbnail):
-        """Open provided headline from hyperlink hidden in thumbnail.
-        Headline is opened in a new browser tab in the background.
-
-        Args:
-
-            thumbnail (selenium object): page fragment containing story thumbnail.
-        """
-        thumbnail.find_element_by_tag_name(
-            "a").send_keys(Keys.CONTROL + Keys.RETURN)
-
-    def go_to_next_page(self, navigation_button):
-        """Move to the next page of the website using the navigation button.
-
-        Args:
-
-            navigation_button (str): name of the class assigned to the
-                navigation button that launches the next page.
-        """
-        self.driver.find_element_by_class_name(navigation_button).click()
-        sleep(2)
-
-    def handle_story_exception(self, story_link, story_problems=None):
-        """Handle missing items of given story allowing the program to continue
-        without interruption.
-
-        Args:
-
-            story_link (str): story web address.
-            story_problems (list, optional): list of story items names for which
-                problems occurred. Defaults to None.
-        """
-        if story_problems:
-            info_fragment = ", ".join(story_problems)
+        if driver_type == "Edge":
+            options = EdgeOptions()
+            options.use_chromium = True
+            self.driver = Edge(
+                EXTERNALS_PATH + "/msedgedriver.exe", options=options)
+        elif driver_type == "Chrome":
+            options = ChromeOptions()
+            options.add_experimental_option(
+                'excludeSwitches', ['enable-logging'])
+            self.driver = Chrome(
+                EXTERNALS_PATH + "/chromedriver.exe", options=options)
         else:
-            info_fragment = "storage"
-        logging.warning(
-            f"There has been problem with {info_fragment} of a story:\n\t{story_link}")
+            raise ValueError(
+                f"Not known type of the provided driver: {driver_type}")
 
-    def collect_story(self, story_date, label, headline, story_address, body):
-        """Collect items from the story, add them to the DataTable `news_data`
-        and display the success log message.
+        self.driver.get(main_page)
+        self.main_window = self.driver.current_window_handle
 
-        Args:
-
-            story_date (datetime): date with time of publication of the story.
-            label (str): story label.
-            headline (str): story headline.
-            story_address (str): story web address.
-            body (str): main story content.
-        """
-        self.news_data.insert_row(
-            [story_date, label, headline, story_address, body])
-
-        if len(headline) > 50:
-            truncated_headline = f"{headline[:50]}.."
-        else:
-            truncated_headline = headline + " "*(52-len(headline))
-        logging.info(
-            f"{truncated_headline} from {story_date.strftime('%Y-%m-%d %H:%M')} stored")
-
-    def news_to_parquet(self, ending_date=None, data_directory=DATA_PATH):
-        """Save collected data from `data_news` to a parquet file in the
-        given location. The file will be saved under a name:
-            `source_indicator(starting_date,ending_date)`.
+    def open_in_new_tab(self, page_address):
+        """Opens provided in the new tab page from the provided page address
+        and focusing browser on it.
 
         Args:
 
-            ending_date (datetime, optional): date of the oldest collected story,
-                used only in emergency data storing. Defaults to None.
-            data_directory (str, optional): directory under which the file will
-                be saved. Defaults to DATA_PATH.
+            page_address (str): page address to be opened.
         """
-        if not ending_date:
-            ending_date = self.oldest_news_date
-        file_name = "".join([
-            self.source_indicator, "(",
-            self.newest_news_date.strftime("%Y_%m_%d_%H_%M"), ",",
-            ending_date.strftime("%Y_%m_%d_%H_%M"), ")"
-        ])
-        self.news_data.to_parquet(file_name, data_directory)
-
-    @property
-    def switch_to_new_tab(self):
-        """Switch the browser tab to the nearest open one."""
+        self.driver.execute_script(
+            f"window.open('{page_address}', 'new_window')")
         self.driver.switch_to.window(self.driver.window_handles[1])
 
     @property
@@ -241,3 +178,72 @@ class NewsReader(ABC):
         """Close the newly opened browser tab with the focus on it."""
         self.driver.close()
         self.driver.switch_to.window(self.main_window)
+
+    def handle_news_exception(self, news_link, news_problems=None):
+        """Handle missing items of given news allowing the program to continue
+        without interruption.
+
+        Args:
+
+            news_link (str): news web address.
+            news_problems (list, optional): list of news items names for which
+                problems occurred. Defaults to None.
+        """
+        if news_problems:
+            info_fragment = ", ".join(news_problems)
+        else:
+            info_fragment = "storage"
+        logging.warning(
+            f"There has been problem with {info_fragment} of a news:\n\t{news_link}")
+
+    def store_news(self, page_address, last_modification_date=None,
+                   publishing_date=None, label=None, headline=None, body=None):
+        """Store items from the news, add them to the DataTable `news_data`
+        and display the success log message.
+
+        Args:
+
+            page_address (str): web address of the news.
+            last_modification_date (datetime, optional): date of the news last
+                modification. Defaults to None.
+            publishing_date (datetime, optional): date of the news publication.
+                Defaults to None.
+            label (str, optional): internal label from the article source page.
+                Defaults to None.
+            headline (str, optional): headline of the news. Defaults to None.
+            body (str, optional): main news content, containing all news
+                paragraphs. Defaults to None.
+        """
+        self.news_data.insert_row(
+            [page_address, last_modification_date,
+             publishing_date, label, headline, body])
+
+        if headline is None:
+            headline = "ARTICLE_WITHOUT_HEADLINE"
+
+        if len(headline) > 50:
+            truncated_headline = f"{headline[:50]}.."
+        else:
+            truncated_headline = headline + " "*(52-len(headline))
+        logging.info(
+            (f"{truncated_headline} from "
+             f"{last_modification_date.strftime('%Y-%m-%d %H:%M')} stored"))
+
+    def news_to_parquet(self, data_directory=DATA_PATH):
+        """Save collected data from `data_news` to a parquet file in the
+        given location. The file will be saved under a name:
+            `source(oldest_date,newest_date)`.
+
+        Args:
+
+            data_directory (str, optional): directory under which the file will
+                be saved. Defaults to DATA_PATH.
+        """
+        oldest_date = self.news_data['LastModificationDate', -1]
+        newest_date = self.news_data['LastModificationDate', 0]
+
+        file_name = "".join(
+            [self.source, "(",
+             oldest_date.strftime("%Y_%m_%d_%H_%M"), ",",
+             newest_date.strftime("%Y_%m_%d_%H_%M"), ")"])
+        self.news_data.to_parquet(file_name, data_directory)

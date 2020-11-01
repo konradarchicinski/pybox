@@ -20,7 +20,7 @@ def scrap_news(settings):
                        for key in settings if key != "Source"}
 
     reader = NewsReader.initiate(source, reader_settings)
-    reader.read_news_headlines
+    reader.read_archival_news
     reader.news_to_parquet(data_directory=DATA_PATH)
 
 
@@ -34,18 +34,6 @@ task.add_setting(
     value="Reuters",
     info="""
     The name of the source webpage such as `Reuters` or `Bloomberg`.
-    """)
-task.add_setting(
-    name="WebPage",
-    value="",
-    info="""
-    Main webpage of source that is going to be scraped.
-    """)
-task.add_setting(
-    name="PageType",
-    value="businessnews",
-    info="""
-    Subpage of source webpage which can wider range of topics.
     """)
 task.add_setting(
     name="NewestNewsDate",
