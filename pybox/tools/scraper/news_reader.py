@@ -146,14 +146,17 @@ class NewsReader(ABC):
         if driver_type == "Edge":
             options = EdgeOptions()
             options.use_chromium = True
+            options.add_experimental_option(
+                "excludeSwitches", ["enable-logging"])
             self.driver = Edge(
-                EXTERNALS_PATH + "/msedgedriver.exe", options=options)
+                EXTERNALS_PATH + "\\msedgedriver.exe", options=options)
         elif driver_type == "Chrome":
             options = ChromeOptions()
+            options.use_chromium = True
             options.add_experimental_option(
                 'excludeSwitches', ['enable-logging'])
             self.driver = Chrome(
-                EXTERNALS_PATH + "/chromedriver.exe", options=options)
+                EXTERNALS_PATH + "\\chromedriver.exe", options=options)
         else:
             raise ValueError(
                 f"Not known type of the provided driver: {driver_type}")
