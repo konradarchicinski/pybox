@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import TaskInit
+from pybox.tools.task import Task
 
 import pybox.tools.database as atdb
 import bs4
@@ -230,7 +230,7 @@ def ingest_data(settings):
     connection.close()
 
 
-task = TaskInit(
+task = Task(
     task_name="DataIngest(GPW)",
     task_info="""
     The task is used to download and save in the database data on shares from
@@ -238,12 +238,12 @@ task = TaskInit(
     """)
 task.add_setting(
     name="EndDate",
-    value=date.today(),
+    default_value=date.today(),
     info="""
     """)
 task.add_setting(
     name="StartDate",
-    value=None,
+    default_value=None,
     info="""
     """)
 task.run(main_function=ingest_data)

@@ -75,17 +75,17 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
         node = ast.parse(task_script.read())
 
         # Only top-level assignments are selected from each module,
-        # since this is how TaskInit instances are created.
+        # since this is how Task instances are created.
         assign_objects = [n for n in node.body if isinstance(n, ast.Assign)]
         for assign_object in assign_objects:
             if isinstance(assign_object.value, ast.Call):
                 # For each found assignment, it is checked whether
                 # the assignedvalue is of the Call type
-                # (which is assumed to refer to TaskInit).
+                # (which is assumed to refer to Task).
                 assign_object_keywords = assign_object.value.keywords
                 for keyword in assign_object_keywords:
                     # If a suitable assignment is found its arguments are
-                    # checked, the task name in TaskInit should be stored
+                    # checked, the task name in Task should be stored
                     # as Const.
                     if isinstance(keyword.value, ast.Constant):
                         if keyword.value.value == supplied_task_name:
@@ -109,22 +109,29 @@ if __name__ == "__main__":
     task_name = parameters_list[0]
     del parameters_list[0]
 
+    inputs_outputs_directory = DATASTORE_PATH
     inputs_directory = DATASTORE_PATH
     outputs_directory = DATASTORE_PATH
     task_info = False
     arguments = []
 
     for element in parameters_list:
-        if element.startswith("ti"):
+        if element.startswith("ti") or element.startswith("-task_info"):
             task_info = True
         else:
             arg_type, arg = element.split(" ", 1)
-            if arg_type == "a":
+            if arg_type in ["a", "-argument"]:
                 arguments.append(arg)
-            elif arg_type == "idir":
+            elif arg_type in ["iodir", "-inputs_outputs_directory"]:
+                inputs_outputs_directory = arg
+            elif arg_type in ["idir", "-inputs_directory"]:
                 inputs_directory = arg
-            elif arg_type == "odir":
+            elif arg_type in ["odir", "-outputs_directory"]:
                 outputs_directory = arg
+
+    if inputs_outputs_directory != DATASTORE_PATH:
+        inputs_directory = inputs_outputs_directory
+        outputs_directory = inputs_outputs_directory
 
     run_selected_module(task_name, inputs_directory,
                         outputs_directory, task_info, arguments)

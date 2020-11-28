@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import TaskInit
+from pybox.tools.task import Task
 import pybox.tools.torch_dataset as attd
 
 import time
@@ -168,33 +168,33 @@ def run_model(settings):
     testing_predict(model, train_dataset.get_vocab(), ngrams)
 
 
-task = TaskInit(
+task = Task(
     task_name="TextClassification",
     task_info="""
     The task is used for thematic classification of the provided text.
     """)
 task.add_setting(
     name="NGrams",
-    value=2,
+    default_value=2,
     info="""
     Defines contiguous sequence of items from a given sample of text or speech.
     """)
 task.add_setting(
     name="BatchSize",
-    value=16,
+    default_value=16,
     info="""
     Defines the number of samples that will be propagated through the network.
     """)
 task.add_setting(
     name="EpochNumber",
-    value=5,
+    default_value=5,
     info="""
     Defines the number times that the learning algorithm will work through
     the entire training dataset.
     """)
 task.add_setting(
     name="EmbeddingDimension",
-    value=32,
+    default_value=32,
     info="""
     Defines the smallest dimension required to embed an object.
     """)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import TaskInit
+from pybox.tools.task import Task
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
@@ -123,14 +123,14 @@ def non_negative_matrix_factorization(data, settings):
         tfidf_vectorizer.get_feature_names(), nmf.components_)
 
 
-task_lda = TaskInit(
+task_lda = Task(
     task_name="TopicModel(LDA)",
     task_info="""
     The task is used for...
     """)
 task_lda.add_setting(
     name="Vectorizer",
-    value={
+    default_value={
         "max_df": 0.95,
         "min_df": 2,
         "max_features": 1000,
@@ -141,7 +141,7 @@ task_lda.add_setting(
     """)
 task_lda.add_setting(
     name="LDAparams",
-    value={
+    default_value={
         "ComponentsNumber": 10,
         "Theta": None,
         "Beta": None,
@@ -153,7 +153,7 @@ task_lda.add_setting(
     """)
 task_lda.add_setting(
     name="ProcessedColumn",
-    value="Abstract",
+    default_value="Abstract",
     info="""
     Defines...
     """)
@@ -163,14 +163,14 @@ task_lda.run(
     task_outputs=["TopicDataLDA"])
 
 
-task_nmf = TaskInit(
+task_nmf = Task(
     task_name="TopicModel(NMF)",
     task_info="""
     The task is used for...
     """)
 task_nmf.add_setting(
     name="Vectorizer",
-    value={
+    default_value={
         "max_df": 0.95,
         "min_df": 2,
         "max_features": 1000,
@@ -181,7 +181,7 @@ task_nmf.add_setting(
     """)
 task_nmf.add_setting(
     name="NMFparams",
-    value={
+    default_value={
         "ComponentsNumber": 10,
         "InitializeMethod": "nndsvd",
         "Solver": "mu",
@@ -195,7 +195,7 @@ task_nmf.add_setting(
     """)
 task_nmf.add_setting(
     name="ProcessedColumn",
-    value="Abstract",
+    default_value="Abstract",
     info="""
     Defines...
     """)

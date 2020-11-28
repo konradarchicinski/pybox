@@ -7,11 +7,11 @@ import pybox.run_task as brt
 import pybox.tools.data.data_flow as btddf
 
 
-class TaskInit:
+class Task:
     """Task initiation, it is used to define an unique task name."""
 
     def __init__(self, task_name, task_info):
-        """Initialization of the TaskInit class, it is used to check if the
+        """Initialization of the Task class, it is used to check if the
         task name supplied by `run_task` script matches the one in the active
         module.
 
@@ -32,22 +32,94 @@ class TaskInit:
         self.outputs_directory = global_variables["OUTPUTS_DIRECTORY"]
         self.supplied_task_name = global_variables["SUPPLIED_TASK_NAME"]
 
-    def add_setting(self, name, value, info):
+    def add_setting(self, name, default_value, info):
         """Function used to add a new setting which will be supplied to a given
         task. Setting acts as a parameter in a given task that can often be
         modified to partially change the operation of the task.
 
         Args:
             name (str): name of a setting.
-            value (any): information stored as a setting.
+            default_value (any): default value stored of a setting.
             info (str): brief mention of the advisability of using a given setting.
         """
-        self.task_settings[name] = value
+        self.task_settings[name] = default_value
         self.task_settings_info[name] = info
 
+    def run(self, main_function, task_inputs=None, task_outputs=None):
+        """Method used to perform the task if an active task was approved
+        after initiation.
+
+        Args:
+            main_function (function): name of the main function used in a task.
+            task_inputs (list, optional): input names which are going to be used
+                in the task. Defaults to None.
+            task_outputs (list, optional): output names which are going to be
+                used in the task. Defaults to None.
+        """
+        if self.show_task_info:
+            self._print_task_info()
+        elif self.supplied_task_name == self.task_name:
+            logging.info(f"Task {self.task_name} started.")
+            function_input_list = list()
+
+            # Sorting out task's settings.
+            if self.task_settings:
+                # Overwriting default settings if there are new ones
+                # supplied from the command line interface.
+                if self.supplied_settings:
+                    for setting in self.supplied_settings:
+                        self._overwrite_setting(setting)
+
+            # Sorting out task's inputs.
+            inputs = list()
+            if task_inputs:
+                task_inputs = self._prepare_io_list(task_inputs, "inputs")
+                for name in task_inputs:
+                    try:
+                        inputs.append(
+                            btddf.table_from_parquet(
+                                file_name=name,
+                                directory=self.inputs_directory))
+                    except FileNotFoundError:
+                        logging.info(
+                            f"\tInput file called `{name}` was not found.")
+                        logging.info(
+                            "\tSearching the task with a given name initiated...")
+
+                        brt.run_selected_module(
+                            supplied_task_name=name,
+                            inputs_directory=self.inputs_directory,
+                            outputs_directory=self.outputs_directory)
+                        inputs.append(
+                            btddf.table_from_parquet(
+                                file_name=name,
+                                directory=self.inputs_directory))
+
+            # Merging inputs and settings into one list.
+            if inputs:
+                function_input_list.extend(inputs)
+            if self.task_settings:
+                function_input_list.append(self.task_settings)
+
+            # Sorting out task's outputs.
+            if task_outputs:
+                task_outputs = self._prepare_io_list(task_outputs, "outputs")
+                outputs = main_function(*function_input_list)
+                if not isinstance(outputs, tuple):
+                    outputs = tuple([outputs])
+                for output, name in zip(outputs, task_outputs):
+                    btddf.table_to_parquet(
+                        table=output,
+                        file_name=name,
+                        directory=self.outputs_directory)
+            else:
+                main_function(*function_input_list)
+
+            logging.info(f"Task {self.task_name} ended.")
+
     def _overwrite_setting(self, setting):
-        """Auxiliary method that overwrites default settings with new values
-        supplied by user from command line interface.
+        """Overwrites default settings with new values supplied by user
+        from the command line interface.
 
         Args:
             setting (str): string that contains the name of the setting and
@@ -84,68 +156,33 @@ class TaskInit:
             )
         print(help_string)
 
-    def run(self, main_function, task_inputs=None, task_outputs=None):
-        """Method used to perform the task if an active task was approved
-        after initiation.
+    def _prepare_io_list(self, task_io, io_type):
+        """Checks if provided task Inputs/Outputs(IO) are of list or function type.
+
+        List type sugests fixed list of IO, so it returns task IO without change.
+        Function type sugests dynamic Inputs/Outputs list creation, to handle it
+        method calls task_io as a function and using it produces right IO list.
 
         Args:
-            main_function (function): name of the main function used in a task.
-            task_inputs (list, optional): input names which are going to be used
-                in the task. Defaults to None.
-            task_outputs (list, optional): output names which are going to be
-                used in the task. Defaults to None.
+
+            task_io (list, function): provided task inputs/outputs list
+                or function to create them.
+            io_type (str): type of a call `inputs` or `outputs`.
+
+        Raises:
+            ValueError: If the given task_io is neither `function` nor `list` type.
         """
-        if self.show_task_info:
-            self._print_task_info()
-        elif self.supplied_task_name == self.task_name:
-            logging.info(f"Task {self.task_name} started.")
-
-            # Solving out task's inputs.
-            function_input_list = list()
-            if task_inputs:
-                inputs = list()
-                for name in task_inputs:
-                    try:
-                        inputs.append(
-                            btddf.table_from_parquet(
-                                file_name=name,
-                                directory=self.inputs_directory))
-                    except FileNotFoundError:
-                        logging.info(
-                            f"\tInput file called `{name}` was not found.")
-                        logging.info(
-                            "\tSearching the task with a given name initiated...")
-
-                        brt.run_selected_module(
-                            supplied_task_name=name,
-                            inputs_directory=self.inputs_directory,
-                            outputs_directory=self.outputs_directory)
-                        inputs.append(
-                            btddf.table_from_parquet(
-                                file_name=name,
-                                directory=self.inputs_directory))
-                function_input_list.extend(inputs)
-
-            # Solving out task's settings.
-            if self.task_settings:
-                # Overwriting default settings if there are new ones
-                # supplied from the command line interface.
-                if self.supplied_settings:
-                    for setting in self.supplied_settings:
-                        self._overwrite_setting(setting)
-                function_input_list.append(self.task_settings)
-
-            # Solving out task's outputs.
-            if task_outputs:
-                outputs = main_function(*function_input_list)
-                if not isinstance(outputs, tuple):
-                    outputs = tuple([outputs])
-                for output, name in zip(outputs, task_outputs):
-                    btddf.table_to_parquet(
-                        table=output,
-                        file_name=name,
-                        directory=self.outputs_directory)
-            else:
-                main_function(*function_input_list)
-
-            logging.info(f"Task {self.task_name} ended.")
+        if isinstance(task_io, list):
+            return task_io
+        elif hasattr(task_io, "__call__"):
+            logging.info(f"\tCreating dynamic {io_type}.")
+            dynamic_io_settings = {
+                "TaskName": self.task_name,
+                "TaskSettings": self.task_settings,
+                "InputsDirectory": self.inputs_directory,
+                "OutputsDirectory": self.outputs_directory
+            }
+            dynamic_task_io = task_io(dynamic_io_settings)
+            return dynamic_task_io
+        else:
+            raise ValueError(f"Wrong type of task inputs/outputs: {task_io}")

@@ -13,7 +13,7 @@ def create_connection(database_name, database_directory=DATASTORE_PATH):
         database_directory (string, optional): directory in which database
             is/would be stored. Defaults to DATA_PATH.
     """
-    database = "".join([database_directory, database_name, ".db"])
+    database = "".join([database_directory, "\\", database_name, ".db"])
 
     connection = None
     try:

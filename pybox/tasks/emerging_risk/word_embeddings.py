@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import TaskInit
+from pybox.tools.task import Task
 
 from gensim.models import Word2Vec
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -81,14 +81,14 @@ def forecast_topics(text_data, lda_topics, nmf_topics, settings):
     return topics_dict
 
 
-task = TaskInit(
+task = Task(
     task_name="ArticleTopics",
     task_info="""
     The task is used for...
     """)
 task.add_setting(
     name="NumberOfTopicRepresentatives",
-    value=10,
+    default_value=10,
     info="""
     Defines...
     """)
