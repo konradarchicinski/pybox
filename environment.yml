@@ -27,4 +27,6 @@ dependencies:
     - torchtext
     - xmltodict
     - msedge-selenium-tools
+    - pybind11
+    - cppimport
   
