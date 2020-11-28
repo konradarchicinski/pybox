@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import re
 import pybox.tools.data.data_helpers as btddh
 import pybox.tools.data.data_to_html as btddth
 import pybox.tools.data.data_table_row as btddtr
@@ -251,6 +252,18 @@ class DataTable:
 
         self._data_map.insert(column_index, [column_name, datatype])
 
+    def separate_columns(self, column_names):
+        """Create copy of a DataTable only with supplied columns.
+
+        Args:
+            column_names (list): column names to be separated.
+        """
+        data_copy = self.copy
+        columns_to_remove = [
+            col for col in self.columns if col not in column_names]
+        data_copy.remove_columns(columns_to_remove)
+        return data_copy
+
     def remove_columns(self, column_names):
         """Remove selected columns from the DataTable.
 
@@ -365,16 +378,21 @@ class DataTable:
         if remove_in_place:
             self.remove_columns([column_name])
 
-    def concatenate(self, outer_data, inner_columns, outer_columns):
+    def concatenate(self, outer_data, inner_columns=None, outer_columns=None):
         """Concatenate the DataTable with an external one.
 
         Args:
             outer_data (DataTable): external DataTable to be concatenated.
-            inner_columns (list): strings representing inner columns to which
-                new data is to be concatenated.
-            outer_columns (list): strings representing outer columns that are
-                to be concatenated.
+            inner_columns (list, optional): strings representing inner columns
+                to which new data is to be concatenated. Defaults to None.
+            outer_columns (list, optional): strings representing outer columns
+                that are to be concatenated. Defaults to None.
         """
+        if inner_columns is None:
+            inner_columns = self.columns
+        if outer_columns is None:
+            outer_columns = outer_data.columns
+
         columns_dict = dict(zip(inner_columns, outer_columns))
         for row in outer_data:
             row_to_append = []
