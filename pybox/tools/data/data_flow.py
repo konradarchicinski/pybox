@@ -47,7 +47,7 @@ def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
         directory (str, optional): string containing directory in which
             DataTable is going to be saved. Defaults to DATASTORE_PATH.
     """
-    file_path = f"{directory}{file_name}.parquet"
+    file_path = f"{directory}\\{file_name}.parquet"
     arrow_table = table.to_arrow_table
     pq.write_table(arrow_table, file_path)
 
@@ -66,7 +66,7 @@ def table_from_parquet(file_name, directory=DATASTORE_PATH):
     Returns:
         DataTable: loaded data in a form of DataTable object.
     """
-    file_path = f"{directory}{file_name}.parquet"
+    file_path = f"{directory}\\{file_name}.parquet"
     arrow_table = pq.read_table(file_path)
     return btddt.DataTable(arrow_table.to_pydict())
 
