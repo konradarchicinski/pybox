@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import DATASTORE_PATH
+from pybox.GLOBALS import GLOBAL_DATA_PATH
 import pybox.tools.data.data_table as btddt
 import pybox.tools.database as btdb
 
@@ -35,7 +35,7 @@ def table_from_sqlite(table_name, database, database_directory=None):
     return btddt.DataTable(np.array(data), names=data_columns)
 
 
-def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
+def table_to_parquet(table, file_name, directory=GLOBAL_DATA_PATH):
     """Store selected `DataTable` object in the parquet format file. Function
     works based on the `PyArrow` module, firstly transforming `DataTable` into
     Arrow object and afterwards writing it as a parquet file.
@@ -45,14 +45,14 @@ def table_to_parquet(table, file_name, directory=DATASTORE_PATH):
         table (DataTable): data structure that will be saved.
         file_name (str): name under which data structure will be saved.
         directory (str, optional): string containing directory in which
-            DataTable is going to be saved. Defaults to DATASTORE_PATH.
+            DataTable is going to be saved. Defaults to GLOBAL_DATA_PATH.
     """
     file_path = f"{directory}\\{file_name}.parquet"
     arrow_table = table.to_arrow_table
     pq.write_table(arrow_table, file_path)
 
 
-def table_from_parquet(file_name, directory=DATASTORE_PATH):
+def table_from_parquet(file_name, directory=GLOBAL_DATA_PATH):
     """Load parquet format file as the `DataTable` object. Function works based
     on the `PyArrow` module, firstly reading file and storing it as an Arrow
     object and afterwards transforming it into `DataTable`.
@@ -61,7 +61,7 @@ def table_from_parquet(file_name, directory=DATASTORE_PATH):
 
         file_name (str): name of parquet file which will be loaded.
         directory (str, optional): string containing directory in which parquet
-            file is stored. Defaults to DATASTORE_PATH.
+            file is stored. Defaults to GLOBAL_DATA_PATH.
 
     Returns:
         DataTable: loaded data in a form of DataTable object.

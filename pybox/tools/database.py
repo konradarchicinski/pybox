@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import DATASTORE_PATH
+from pybox.GLOBALS import GLOBAL_DATA_PATH
 
 import sqlite3
 import logging
 
 
-def create_connection(database_name, database_directory=DATASTORE_PATH):
+def create_connection(database_name, database_directory=GLOBAL_DATA_PATH):
     """Creates a SQLite database connection.
 
     Args:
         database_name (string): database name without file extension.
         database_directory (string, optional): directory in which database
-            is/would be stored. Defaults to DATA_PATH.
+            is/would be stored. Defaults to GLOBAL_DATA_PATH.
     """
     database = "".join([database_directory, "\\", database_name, ".db"])
 
@@ -27,7 +27,7 @@ def create_connection(database_name, database_directory=DATASTORE_PATH):
 
 
 def check_if_table_exists(table_name, database_name,
-                          database_directory=DATASTORE_PATH):
+                          database_directory=GLOBAL_DATA_PATH):
 
     # Check if in a given SQLite database exists certain table.
     conn = create_connection(database_name)
