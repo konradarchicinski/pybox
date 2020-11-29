@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import DATA_PATH
+from boxes.scrapers import DATA_PATH
 from pybox.tools.task import Task
 from pybox.tools.scraper.news_reader import NewsReader
 
@@ -50,9 +50,9 @@ def scrap_news(settings):
     for iteration in range(1 + additional_interval):
         reader_settings = update_reader_settings(iteration, reader_settings)
 
-        reader = NewsReader.initiate(source, reader_settings)
+        reader = NewsReader.initiate(source, reader_settings, DATA_PATH)
         reader.read_archival_news
-        reader.news_to_parquet(data_directory=DATA_PATH)
+        reader.news_to_parquet(DATA_PATH)
 
 
 task = Task(
