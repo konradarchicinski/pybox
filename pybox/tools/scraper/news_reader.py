@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import EXTERNALS_PATH, DATA_PATH
+from pybox.GLOBALS import EXTERNALS_PATH, GLOBAL_DATA_PATH
 from pybox.tools.date_helpers import to_datetime
 from pybox.tools.data.data_table import DataTable
 from pybox.tools.data.data_helpers import camel_to_snake_case
@@ -32,7 +32,7 @@ def emergency_data_protector(function):
             function(self, *args, **kwargs)
         except Exception:
             exception_traceback = traceback.format_exc()
-            self.news_to_parquet()
+            self.news_to_parquet(self.data_path)
             logging.error(
                 "Occurred error, collected stories were saved in data folder.")
             print(exception_traceback)
@@ -68,7 +68,7 @@ class NewsReader(ABC):
             dtypes=[str, datetime, datetime, str, str, str])
 
     @staticmethod
-    def initiate(source, reader_settings=None):
+    def initiate(source, reader_settings=None, data_path=GLOBAL_DATA_PATH):
         """Return a class instance of a reader implementation for a supplied
         news site source.
 
@@ -86,6 +86,7 @@ class NewsReader(ABC):
                 is to be instantiated.
             reader_settings (dict, optional): implementation settings,
                 which allow to control reader actions. Defaults to None.
+            data_path (str): place to store news data. Defaults to GLOBAL_DATA_PATH.
         """
         if not reader_settings:
             reader_settings = dict()
@@ -99,6 +100,7 @@ class NewsReader(ABC):
                                            for key, value in reader_settings.items()}
                         scraper = child(**reader_settings)
                         scraper.source = source
+                        scraper.data_path = data_path
                         return scraper
                     else:
                         raise ValueError((
@@ -111,7 +113,7 @@ class NewsReader(ABC):
     @emergency_data_protector
     def read_news(self):
         """Locate a list of news headlines on the provided website and store them
-        in DATA_PATH folder. Function iterates over found healines list, selecting
+        in GLOBAL_DATA_PATH folder. Function iterates over found healines list, selecting
         only those whose publication date is within the specified date range
         initialized in class settings.
         """
@@ -121,7 +123,7 @@ class NewsReader(ABC):
     @emergency_data_protector
     def read_archival_news(self):
         """Locate a list of news headlines from the xml sitemap data of provided
-        webpage source and store them in DATA_PATH folder. Only those articles
+        webpage source and store them in GLOBAL_DATA_PATH folder. Only those articles
         whose last modification date is within the specified date range,
         initialized in class settings, are stored.
         """
@@ -232,7 +234,7 @@ class NewsReader(ABC):
             (f"{truncated_headline} from "
              f"{last_modification_date.strftime('%Y-%m-%d %H:%M')} stored"))
 
-    def news_to_parquet(self, data_directory=DATA_PATH):
+    def news_to_parquet(self, data_directory=GLOBAL_DATA_PATH):
         """Save collected data from `data_news` to a parquet file in the
         given location. The file will be saved under a name:
             `source(oldest_date,newest_date)`.
@@ -240,7 +242,7 @@ class NewsReader(ABC):
         Args:
 
             data_directory (str, optional): directory under which the file will
-                be saved. Defaults to DATA_PATH.
+                be saved. Defaults to GLOBAL_DATA_PATH.
         """
         oldest_date = self.news_data['LastModificationDate', -1]
         newest_date = self.news_data['LastModificationDate', 0]

@@ -8,7 +8,7 @@ import pybox.tools.data.data_flow as btddf
 
 
 class Task:
-    """Task initiation, it is used to define an unique task name."""
+    """Task class, it is used to define an unique task name."""
 
     def __init__(self, task_name, task_info):
         """Initialization of the Task class, it is used to check if the
@@ -33,8 +33,8 @@ class Task:
         self.supplied_task_name = global_variables["SUPPLIED_TASK_NAME"]
 
     def add_setting(self, name, default_value, info):
-        """Function used to add a new setting which will be supplied to a given
-        task. Setting acts as a parameter in a given task that can often be
+        """Adds a new setting which will be supplied to a given task.
+        Setting acts as a parameter in a given task that can often be
         modified to partially change the operation of the task.
 
         Args:
@@ -46,8 +46,7 @@ class Task:
         self.task_settings_info[name] = info
 
     def run(self, main_function, task_inputs=None, task_outputs=None):
-        """Method used to perform the task if an active task was approved
-        after initiation.
+        """Performs the task if an active task was approved after initiation.
 
         Args:
             main_function (function): name of the main function used in a task.
@@ -67,8 +66,7 @@ class Task:
                 # Overwriting default settings if there are new ones
                 # supplied from the command line interface.
                 if self.supplied_settings:
-                    for setting in self.supplied_settings:
-                        self._overwrite_setting(setting)
+                    self._overwrite_settings
 
             # Sorting out task's inputs.
             inputs = list()
@@ -117,34 +115,8 @@ class Task:
 
             logging.info(f"Task {self.task_name} ended.")
 
-    def _overwrite_setting(self, setting):
-        """Overwrites default settings with new values supplied by user
-        from the command line interface.
-
-        Args:
-            setting (str): string that contains the name of the setting and
-                its value, they are separated from each other by a colon.
-
-        Raises:
-            ValueError: If the given setting name is not present in default
-                settings, an error is returned, as there is nothing to be
-                overwrite with the new settings value.
-        """
-        setting_name, setting_value = setting.split(":", 1)
-        setting_value = setting_value.strip("\'")
-
-        if setting_name in self.task_settings:
-            if isinstance(self.task_settings[setting_name], str):
-                self.task_settings[setting_name] = setting_value
-            else:
-                self.task_settings[setting_name] = ast.literal_eval(
-                    setting_value)
-        else:
-            raise ValueError(
-                f"`{setting_name}` has not been found in task settings.")
-
     def _print_task_info(self):
-        """Auxiliary method that displays basic information about called task."""
+        """Displays basic information about called task."""
         help_string = "".join(["\nTask Info:", self.task_info])
 
         for name, info in self.task_settings_info.items():
@@ -186,3 +158,21 @@ class Task:
             return dynamic_task_io
         else:
             raise ValueError(f"Wrong type of task inputs/outputs: {task_io}")
+
+    @property
+    def _overwrite_settings(self):
+        """Overwrites default settings with new values supplied by user
+        from the command line interface.
+        """
+        if isinstance(self.supplied_settings, dict):
+            self.task_settings.update(self.supplied_settings)
+        else:
+            for setting in self.supplied_settings:
+                setting_name, setting_value = setting.split(":", 1)
+                setting_value = setting_value.strip("\'")
+
+                if isinstance(self.task_settings[setting_name], str):
+                    self.task_settings[setting_name] = setting_value
+                else:
+                    self.task_settings[setting_name] = ast.literal_eval(
+                        setting_value)
