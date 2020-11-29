@@ -90,6 +90,9 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
         bool: True if `supplied_task_name` in `task_file`, otherwise False.
     """
     check_value = False
+    # Splits are performed to separate parameters from task name
+    # (if parameters exist). At this stage they should not be relevant.
+    supplied_task_name = supplied_task_name.split("(")[0]
 
     with open(task_file) as task_script:
         node = ast.parse(task_script.read())
@@ -105,10 +108,11 @@ def _task_name_registered_in_file(task_file, supplied_task_name):
                 assign_object_keywords = assign_object.value.keywords
                 for keyword in assign_object_keywords:
                     # If a suitable assignment is found its arguments are
-                    # checked, the task name in Task should be stored
-                    # as Const.
-                    if isinstance(keyword.value, ast.Constant):
-                        if keyword.value.value == supplied_task_name:
+                    # checked, the task name in Task is found by arg name
+                    # which should be `task_name`.
+                    if keyword.arg == "task_name":
+                        found_task_name = keyword.value.value.split("(")[0]
+                        if found_task_name == supplied_task_name:
                             check_value = True
     return check_value
 

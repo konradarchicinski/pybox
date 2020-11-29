@@ -19,11 +19,6 @@ class Task:
             task_name (str): task name registered in the active module.
             task_info (str): information on the purpose of the task.
         """
-        self.task_name = task_name
-        self.task_info = task_info
-        self.task_settings = dict()
-        self.task_settings_info = dict()
-
         # Getting variables from caller's globals.
         global_variables = inspect.stack()[1][0].f_globals
         self.supplied_settings = global_variables["SETTINGS"]
@@ -32,7 +27,12 @@ class Task:
         self.outputs_directory = global_variables["OUTPUTS_DIRECTORY"]
         self.supplied_task_name = global_variables["SUPPLIED_TASK_NAME"]
 
-    def add_setting(self, name, default_value, info):
+        self._construct_name_and_parameters(task_name)
+        self.task_info = task_info
+        self.task_settings = dict()
+        self.task_settings_info = dict()
+
+    def add_setting(self, name, default_value, info, task_parameters=None):
         """Adds a new setting which will be supplied to a given task.
         Setting acts as a parameter in a given task that can often be
         modified to partially change the operation of the task.
@@ -41,9 +41,15 @@ class Task:
             name (str): name of a setting.
             default_value (any): default value stored of a setting.
             info (str): brief mention of the advisability of using a given setting.
+            task_parameters (list, optional): define which task type
+                the setting applies to. Default None.
         """
-        self.task_settings[name] = default_value
-        self.task_settings_info[name] = info
+        if task_parameters is None:
+            task_parameters = self.parameters
+        if (any(parameter in task_parameters for parameter in self.parameters)
+                or not self.parameters):
+            self.task_settings[name] = default_value
+            self.task_settings_info[name] = info
 
     def run(self, main_function, task_inputs=None, task_outputs=None):
         """Performs the task if an active task was approved after initiation.
@@ -115,6 +121,30 @@ class Task:
 
             logging.info(f"Task {self.task_name} ended.")
 
+    def _construct_name_and_parameters(self, task_name):
+        """Constructs task name and parameters objects from supplied task name.
+
+        Args:
+            task_name (str): task name registered in the active module.
+
+        Raises:
+            ValueError:  If found parameters from first name does not match
+            the length of parameters from the other one.
+        """
+        task_parameters = retrieve_parameters(task_name)
+        supplied_parameters = retrieve_parameters(self.supplied_task_name)
+
+        if len(task_parameters) == len(supplied_parameters):
+            self.parameters = supplied_parameters
+            self.task_name = task_name
+            for parameter, supplied_parameter in zip(task_parameters, supplied_parameters):
+                self.task_name = self.task_name.replace(
+                    parameter, supplied_parameter)
+        else:
+            raise ValueError((
+                f"Provided parameters {supplied_parameters} do not"
+                f" match the expected ones {task_parameters}."))
+
     def _print_task_info(self):
         """Displays basic information about called task."""
         help_string = "".join(["\nTask Info:", self.task_info])
@@ -176,3 +206,19 @@ class Task:
                 else:
                     self.task_settings[setting_name] = ast.literal_eval(
                         setting_value)
+
+
+def retrieve_parameters(task_name):
+    """Retrieves parameters from provided task name. If task has not
+    any parameter returns empty list.
+
+    Args:
+        task_name (str): name in which parameters will be searched.
+    """
+    start = task_name.find("(")
+    end = task_name.find(")")
+
+    if -1 not in [start, end]:
+        return task_name[start+1:end].split(",")
+    else:
+        return list()
