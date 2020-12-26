@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import BOXES_PATH
-from pybox.tools.data.data_helpers import camel_to_snake_case
+from pybox.helpers.text import camel_to_snake_case
 
 import os
 import argparse
 
 new_task_template = """
 #!/usr/bin/env python
-from pybox.tools.task import Task
+from pybox.task import Task
 
 
 def {}():

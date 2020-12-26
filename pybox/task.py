@@ -2,9 +2,11 @@
 import ast
 import inspect
 import logging
+import yaml
 
-import pybox.run_task as brt
-import pybox.tools.data.data_flow as btddf
+import pybox.run_task as pbrt
+import pybox.datastore.data_flow as pbddf
+from pybox.helpers.text import snake_to_camel_case
 
 
 class Task:
@@ -27,10 +29,33 @@ class Task:
         self.outputs_directory = global_variables["OUTPUTS_DIRECTORY"]
         self.supplied_task_name = global_variables["SUPPLIED_TASK_NAME"]
 
-        self._construct_name_and_parameters(task_name)
-        self.task_info = task_info
         self.task_settings = dict()
         self.task_settings_info = dict()
+        self.task_info = task_info
+        self._construct_name_and_parameters(task_name)
+
+    def external_settings(self, file_name, file_directory):
+        """Reads external settings from YAML file and stores them as task settings.
+
+        Args:
+            file_name (str): name of the file to read.
+            file_directory (str): directory of the file to read.
+        """
+        with open(f"{file_directory}\\{file_name}", "r") as settings:
+            raw_settings = yaml.load(settings, Loader=yaml.FullLoader)
+        for name, value in raw_settings.items():
+            # Adjustments of the info string to prepare long string for printing.
+            indentation = "\n" + " "*4
+            value["info"] = "".join([indentation, value['info'], indentation])
+            for i in range(1, len(value["info"])):
+                if i % 70 == 0:
+                    break_line_index = value["info"].find(" ", i)
+                    value["info"] = indentation.join([
+                        value["info"][:break_line_index],
+                        value["info"][break_line_index + 1:]])
+
+            self.task_settings[name] = value["value"]
+            self.task_settings_info[name] = value["info"]
 
     def add_setting(self, name, default_value, info, task_parameters=None):
         """Adds a new setting which will be supplied to a given task.
@@ -81,7 +106,7 @@ class Task:
                 for name in task_inputs:
                     try:
                         inputs.append(
-                            btddf.table_from_parquet(
+                            pbddf.table_from_parquet(
                                 file_name=name,
                                 directory=self.inputs_directory))
                     except FileNotFoundError:
@@ -90,19 +115,19 @@ class Task:
                         logging.info(
                             "\tSearching the task with a given name initiated...")
 
-                        brt.run_selected_module(
+                        pbrt.run_selected_module(
                             supplied_task_name=name,
                             inputs_directory=self.inputs_directory,
                             outputs_directory=self.outputs_directory)
                         inputs.append(
-                            btddf.table_from_parquet(
+                            pbddf.table_from_parquet(
                                 file_name=name,
                                 directory=self.inputs_directory))
 
-            # Merging inputs and settings into one list.
+            # Merging inputs, settings into one list.
             if inputs:
                 function_input_list.extend(inputs)
-            if self.task_settings:
+            if self.task_settings or self.parameters:
                 function_input_list.append(self.task_settings)
 
             # Sorting out task's outputs.
@@ -112,7 +137,7 @@ class Task:
                 if not isinstance(outputs, tuple):
                     outputs = tuple([outputs])
                 for output, name in zip(outputs, task_outputs):
-                    btddf.table_to_parquet(
+                    pbddf.table_to_parquet(
                         table=output,
                         file_name=name,
                         directory=self.outputs_directory)
@@ -137,9 +162,13 @@ class Task:
         if len(task_parameters) == len(supplied_parameters):
             self.parameters = supplied_parameters
             self.task_name = task_name
-            for parameter, supplied_parameter in zip(task_parameters, supplied_parameters):
-                self.task_name = self.task_name.replace(
-                    parameter, supplied_parameter)
+            if self.parameters:
+                self.task_settings["Parameters"] = dict()
+                for parameter, supplied_parameter in zip(task_parameters, supplied_parameters):
+                    self.task_settings["Parameters"][
+                        snake_to_camel_case(parameter.strip("?"))] = supplied_parameter
+                    self.task_name = self.task_name.replace(
+                        parameter, supplied_parameter)
         else:
             raise ValueError((
                 f"Provided parameters {supplied_parameters} do not"

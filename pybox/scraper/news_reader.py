@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import EXTERNALS_PATH, GLOBAL_DATA_PATH
-from pybox.tools.date_helpers import to_datetime
-from pybox.tools.data.data_table import DataTable
-from pybox.tools.data.data_helpers import camel_to_snake_case
+from pybox.datastore.data_table import DataTable
+from pybox.helpers.text import camel_to_snake_case
+from pybox.helpers.date import to_datetime
 
 import logging
 import os
 import traceback
 import sys
+import time
 from abc import ABC, abstractproperty
 from datetime import datetime, date
 from importlib import import_module
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from msedge.selenium_tools import Edge, EdgeOptions
 
 
@@ -102,10 +106,9 @@ class NewsReader(ABC):
                         scraper.source = source
                         scraper.data_path = data_path
                         return scraper
-                    else:
-                        raise ValueError((
-                            f"Module `{module}` has been inspected but no proper"
-                            " implementation of `NewsReader` was found there."))
+                raise ValueError((
+                    f"Module `{module}` has been inspected but no proper"
+                    " implementation of `NewsReader` was found there."))
         raise ValueError(
             f"No suitable NewsReader implementation was found for `{source}`.")
 
@@ -148,41 +151,37 @@ class NewsReader(ABC):
         if driver_type == "Edge":
             options = EdgeOptions()
             options.use_chromium = True
-            options.add_experimental_option(
-                "excludeSwitches", ["enable-logging"])
-            self.driver = Edge(
-                EXTERNALS_PATH + "\\msedgedriver.exe", options=options)
+            options.add_experimental_option("excludeSwitches",
+                                            ["enable-logging"])
+            self.driver = Edge(EXTERNALS_PATH + "\\msedgedriver.exe",
+                               options=options)
         elif driver_type == "Chrome":
             options = ChromeOptions()
             options.use_chromium = True
-            options.add_experimental_option(
-                'excludeSwitches', ['enable-logging'])
-            self.driver = Chrome(
-                EXTERNALS_PATH + "\\chromedriver.exe", options=options)
+            options.add_experimental_option('excludeSwitches',
+                                            ['enable-logging'])
+            self.driver = Chrome(EXTERNALS_PATH + "\\chromedriver.exe",
+                                 options=options)
         else:
             raise ValueError(
                 f"Not known type of the provided driver: {driver_type}")
-
         self.driver.get(main_page)
-        self.main_window = self.driver.current_window_handle
 
-    def open_in_new_tab(self, page_address):
-        """Opens provided in the new tab page from the provided page address
-        and focusing browser on it.
+    def accept_consent_form(self, button_id):
+        """Clicks on the acceptance button of consent form agreement
+        showing up on the certain webpage.
 
         Args:
 
-            page_address (str): page address to be opened.
+            button_id (str): identificator of the acceptance button.
         """
-        self.driver.execute_script(
-            f"window.open('{page_address}', 'new_window')")
-        self.driver.switch_to.window(self.driver.window_handles[1])
-
-    @property
-    def close_new_tab(self):
-        """Close the newly opened browser tab with the focus on it."""
-        self.driver.close()
-        self.driver.switch_to.window(self.main_window)
+        time.sleep(15)
+        try:
+            accept_button = WebDriverWait(self.driver, 60).until(
+                EC.presence_of_element_located((By.ID, button_id)))
+            accept_button.click()
+        except BaseException:
+            pass
 
     def handle_news_exception(self, news_link, news_problems=None):
         """Handle missing items of given news allowing the program to continue

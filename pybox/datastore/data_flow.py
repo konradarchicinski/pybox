@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from pybox.GLOBALS import GLOBAL_DATA_PATH
-import pybox.tools.data.data_table as btddt
-import pybox.tools.database as btdb
+from pybox.datastore.data_table import DataTable
+import pybox.datastore.database as pbdsdb
 
 import pyarrow.parquet as pq
 import numpy as np
@@ -20,9 +20,9 @@ def table_from_sqlite(table_name, database, database_directory=None):
             database is stored. Defaults to None.
     """
     if database_directory:
-        conn = btdb.create_connection(database, database_directory)
+        conn = pbdsdb.create_connection(database, database_directory)
     else:
-        conn = btdb.create_connection(database)
+        conn = pbdsdb.create_connection(database)
     with conn:
         cur = conn.cursor()
         cur.execute(f"SELECT * FROM '{table_name}'")
@@ -32,7 +32,7 @@ def table_from_sqlite(table_name, database, database_directory=None):
 
     data_columns = [column[1] for column in info]
 
-    return btddt.DataTable(np.array(data), names=data_columns)
+    return DataTable(np.array(data), names=data_columns)
 
 
 def table_to_parquet(table, file_name, directory=GLOBAL_DATA_PATH):
@@ -68,7 +68,7 @@ def table_from_parquet(file_name, directory=GLOBAL_DATA_PATH):
     """
     file_path = f"{directory}\\{file_name}.parquet"
     arrow_table = pq.read_table(file_path)
-    return btddt.DataTable(arrow_table.to_pydict())
+    return DataTable(arrow_table.to_pydict())
 
 
 def dict_from_xml(file_name, branch=None):

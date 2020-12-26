@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import pybox.tools.database as btdb
+import pybox.datastore.database as pbdsdb
 
 import random
 import logging
@@ -62,7 +62,7 @@ def setup_datasets(ngrams, vocabulary=None, include_unk=False):
     Returns:
         [type]: [description]
     """
-    connection = btdb.create_connection("AGNEWS")
+    connection = pbdsdb.create_connection("AGNEWS")
     with connection:
         cur = connection.cursor()
         cur.execute("SELECT Classification,Lead,Body FROM NewsClassification")

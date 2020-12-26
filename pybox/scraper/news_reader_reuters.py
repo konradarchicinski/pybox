@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-from pybox.tools.date_helpers import to_datetime, create_dates_list
-from pybox.tools.data.data_flow import dict_from_xml
-from pybox.tools.scraper.news_reader import NewsReader, emergency_data_protector
+from pybox.scraper.news_reader import NewsReader, emergency_data_protector
+from pybox.helpers.date import to_datetime, create_dates_list
+from pybox.datastore.data_flow import dict_from_xml
+
+
+import time
 
 
 class NewsReaderReuters(NewsReader):
@@ -40,6 +43,7 @@ class NewsReaderReuters(NewsReader):
         """
         self.setup_driver(main_page="https://www.reuters.com/",
                           driver_type="Edge")
+        self.accept_consent_form("accept-recommended-btn-handler")
 
         for web_address in self.xml_web_addresses:
             news_info_list = dict_from_xml(web_address, branch="/urlset/url")
@@ -49,10 +53,9 @@ class NewsReaderReuters(NewsReader):
                 self.news_content["page_address"] = news_info["loc"]
                 self.news_content["last_modification_date"] = to_datetime(
                     news_info["lastmod"])
-                self.open_in_new_tab(self.news_content["page_address"])
+                self.driver.get(self.news_content["page_address"])
                 self.retrieve_news_content
                 self.store_news(**self.news_content)
-                self.close_new_tab
 
         self.driver.quit()
 
@@ -64,6 +67,7 @@ class NewsReaderReuters(NewsReader):
         The collected content of a specific article may be: page_address,
         last_modification_date, publishing_date, label, headline and body.
         """
+        time.sleep(0.5)
         try:
             news_info_bar = self.driver.find_element_by_css_selector(
                 "div[class*='ArticleHeader']")

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-import re
-import pybox.tools.data.data_helpers as btddh
-import pybox.tools.data.data_to_html as btddth
-import pybox.tools.data.data_table_row as btddtr
+import pybox.helpers.data as data_helpers
+import pybox.datastore.data_to_html as pbdsdth
+import pybox.datastore.data_table_row as pbdsdtr
 
 from copy import deepcopy
 from datetime import date, datetime
+from tqdm import tqdm
 
-
-DATA_TYPES = [int, float, complex, bool, str, type(None), date, datetime]
+DATA_TYPES = [int, float, complex, bool, str,
+              type(None), date, datetime]
 
 
 class DataTable:
@@ -17,6 +17,7 @@ class DataTable:
     __slots__ = ["_data", "_data_map"]
 
     def __init__(self, data=None, names=None, dtypes=None):
+        DATA_TYPES.append(self.__class__)
         self._data = list()
         self._data_map = list()
 
@@ -38,7 +39,7 @@ class DataTable:
             for column_idx in range(len(self._data[0])):
                 self._data_map.append([
                     names[column_idx],
-                    btddh.recognize_type((
+                    data_helpers.recognize_type((
                         self._data[row_idx][column_idx]
                         for row_idx in range(len(self._data))
                     ))
@@ -67,10 +68,10 @@ class DataTable:
                 self.insert_column(key, [None] * self.length, type(value))
 
             if isinstance(value, list) or isinstance(value, tuple):
-                datatype = btddh.recognize_type(value)
+                datatype = data_helpers.recognize_type(value)
                 for index, element in enumerate(value):
                     self._data[index][self.column_index(key)] = (
-                        btddh.change_type(element, datatype)
+                        data_helpers.change_type(element, datatype)
                     )
             else:
                 self._data[0][self.column_index(key)] = value
@@ -85,10 +86,10 @@ class DataTable:
                 "row splitted by comma. ")
 
     def __iter__(self):
-        return (btddtr.DataTableRow(self, row) for row in range(self.length))
+        return (pbdsdtr.DataTableRow(self, row) for row in range(self.length))
 
     def __str__(self):
-        return self.info
+        return f"DataTable({self.width}x{self.length})"
 
     def __repr__(self):
         return f"DataTable({self.width}x{self.length})"
@@ -121,7 +122,7 @@ class DataTable:
     @property
     def bytesize(self):
         """Returns the approximate memory DataTable footprint."""
-        return btddh.byte_size(self._data) + btddh.byte_size(self._data_map)
+        return data_helpers.byte_size(self._data) + data_helpers.byte_size(self._data_map)
 
     @property
     def info(self):
@@ -155,6 +156,9 @@ class DataTable:
         )
         return arrow_table
 
+    def rows(self):
+        return (pbdsdtr.DataTableRow(self, row) for row in tqdm(range(self.length)))
+
     def to_parquet(self, file_name, directory):
         """Store `DataTable` in the parquet format file.
 
@@ -162,10 +166,10 @@ class DataTable:
             file_name (str): name under which data structure will be saved.
             directory (str): folder structure in which DataTable is to be saved.
         """
-        from pybox.tools.data.data_flow import table_to_parquet
+        from pybox.datastore.data_flow import table_to_parquet
         table_to_parquet(self, file_name, directory)
 
-    def display(self, rows_number=10, display_type=None):
+    def display(self, rows_number=10, display_type=None, string_length=299):
         """Display the contents of the current DataTable in rendered html format.
 
         Args:
@@ -177,15 +181,21 @@ class DataTable:
                 If `tail` display tail elements.
                 Otherwise display entire or first heading and tail elements.
                 Defaults to None.
+            string_length (int, optional): maximal length of returned string, 
+                if None entire string is printed. Defaults to 299.
         """
         if not display_type:
-            btddth.show_table(self._data, self._data_map, rows_number)
+            pbdsdth.show_table(
+                self._data, self._data_map, rows_number, string_length)
         elif display_type.lower() == "random":
-            btddth.show_table_random(self._data, self._data_map, rows_number)
+            pbdsdth.show_table_random(
+                self._data, self._data_map, rows_number, string_length)
         elif display_type.lower() == "head":
-            btddth.show_table_head(self._data, self._data_map, rows_number)
+            pbdsdth.show_table_head(
+                self._data, self._data_map, rows_number, string_length)
         elif display_type.lower() == "tail":
-            btddth.show_table_tail(self._data, self._data_map, rows_number)
+            pbdsdth.show_table_tail(
+                self._data, self._data_map, rows_number, string_length)
 
     def column_index(self, column_name):
         """Return the index number of the specified column.
@@ -237,7 +247,7 @@ class DataTable:
                 self._data.append([None] * self.width)
 
         if not datatype:
-            datatype = btddh.recognize_type(column_values)
+            datatype = data_helpers.recognize_type(column_values)
             if datatype not in DATA_TYPES and datatype.__module__ != "numpy":
                 raise ValueError(
                     "Wrong type of data supplied, it must be one of: ",
@@ -248,7 +258,7 @@ class DataTable:
         for idx in range(self.length):
             self._data[idx].insert(
                 column_index,
-                btddh.change_type(column_values[idx], datatype))
+                data_helpers.change_type(column_values[idx], datatype))
 
         self._data_map.insert(column_index, [column_name, datatype])
 
@@ -290,7 +300,8 @@ class DataTable:
                 "Supplied row needs to be the same width as DataTable",
                 f", which is {self.width}.")
         for idx, value in enumerate(row_values):
-            row_values[idx] = btddh.change_type(value, self._data_map[idx][1])
+            row_values[idx] = data_helpers.change_type(
+                value, self._data_map[idx][1])
 
         if row_index is None:
             row_index = self.length
@@ -335,17 +346,29 @@ class DataTable:
             key=sort_function,
             reverse=reverse_order)
 
-    def filter(self, filtering_function):
-        """Filter in place the DataTable rows. Filtering is performed on rows
-        which meet the condition set in the filtering function.
+    def filter(self, filtering_function, return_filtered_out=False):
+        """Filters in place the DataTable rows, removing rows which do not
+        meet condition from provided functiom. If `return_filtered_out` is
+        True method additionaly returns object with filtered out rows.
 
         Args:
             filtering_function (function): used to select rows meeting the
                 condition set in the function.
+            return_filtered_out (bool, optional): indicating whether to save
+                the filtered rows in a separate table. Defaults to False.
         """
-        for index, row in reversed(list(enumerate(self))):
-            if not filtering_function(row):
-                del self._data[index]
+        if return_filtered_out:
+            filtered_out = self.copy
+            for index, row in reversed(list(enumerate(self))):
+                if not filtering_function(row):
+                    del self._data[index]
+                else:
+                    del filtered_out._data[index]
+            return filtered_out
+        else:
+            for index, row in reversed(list(enumerate(self))):
+                if not filtering_function(row):
+                    del self._data[index]
 
     def create_dummies(self, column_name, remove_in_place=True):
         """Convert specified column containing categorical variables into
@@ -420,7 +443,7 @@ class DataTable:
         self._data_map.extend(outer_data_copy._data_map)
 
         for idx in self.rows_range():
-            position = btddh.binary_search(
+            position = data_helpers.binary_search(
                 outer_data_copy["OuterMainColumn"], self[inner_column, idx])
             if position is None:
                 self._data[idx].extend([None] * outer_data_width)

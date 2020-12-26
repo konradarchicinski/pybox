@@ -1,0 +1,19 @@
+max_df:
+  info: 
+    When building the vocabulary ignore terms that have a document frequency
+    strictly higher than the given threshold (corpus-specific stop words).
+    If float, the parameter represents a proportion of documents, integer
+    absolute counts. This parameter is ignored if vocabulary is not None.
+  value: 0.9
+min_df:
+  info:
+    When building the vocabulary ignore terms that have a document frequency
+    strictly lower than the given threshold. This value is also called cut-off
+    in the literature. If float, the parameter represents a proportion of documents,
+    integer absolute counts. This parameter is ignored if vocabulary is not None.
+  value: 5
+stop_words:
+  info:
+    If `english`, a built-in sklearn stop word list for English.
+  value:
+    english

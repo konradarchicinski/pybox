@@ -11,6 +11,7 @@ dependencies:
   - numba
   - pyarrow
   - pytorch
+  - plotly
   - scikit-learn
   - gensim
   - scipy
@@ -21,12 +22,17 @@ dependencies:
   - tqdm
   - pyyaml
   - lxml
+  - spacy
+  - spacy-lookups-data
   - pip:
     - pep8
+    - spacy[cuda92]
     - autopep8
     - torchtext
     - xmltodict
     - msedge-selenium-tools
     - pybind11
     - cppimport
+    - arch
+    - numdifftools
   

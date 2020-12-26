@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from pybox.tools.task import Task
-import pybox.tools.torch_dataset as attd
+from pybox.task import Task
+import pybox.datastore.torch_dataset as pbdstd
 
 import time
 import torch
@@ -119,7 +119,7 @@ def run_model(settings):
     epochs_number = settings["EpochNumber"]
     embedding_dimension = settings["EmbeddingDimension"]
 
-    train_dataset, test_dataset = attd.setup_datasets(ngrams)
+    train_dataset, test_dataset = pbdstd.setup_datasets(ngrams)
     vocabulary_size = len(train_dataset.get_vocab())
     class_number = len(train_dataset.get_labels())
 
