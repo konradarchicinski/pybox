@@ -1,4 +1,4 @@
 #!/usr/bin/env python
-from pybox.tools.data.data_table import DataTable
-from pybox.tools.scraper.news_reader import NewsReader
-import pybox.tools.data.data_flow as flow
+from pybox.datastore.data_table import DataTable
+from pybox.scraper.news_reader import NewsReader
+import pybox.datastore.data_flow as flow

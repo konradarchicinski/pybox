@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-from pybox.tools.task import Task
+from pybox.task import Task
 from pybox import DataTable
 
 import os
+import re
 from datetime import datetime
 
 
@@ -13,19 +14,27 @@ def clean_reuters(inputs):
     Args:
         inputs (list): DataTables containing raw Reuters news data.
     """
-    data_columns = ["LastModificationDate", "Headline", "Body"]
-    cleaned_reuters = DataTable(
-        names=data_columns,
-        dtypes=[datetime, str, str])
+    # data_columns = ["LastModificationDate", "Label", "Headline", "Body"]
+    # column_types = [datetime, str, str, str]
+    data_columns = ["PageAddress", "LastModificationDate",
+                    "PublishingDate", "Label", "Headline", "Body"]
+    column_types = [str, datetime, datetime, str, str, str]
+    cleaned_reuters = DataTable(names=data_columns, dtypes=column_types)
 
     for input_data in inputs:
         cleaned_reuters.concatenate(
             input_data, inner_columns=data_columns, outer_columns=data_columns)
 
-    cleaned_reuters.filter(
-        lambda row: all(row[column] is not None for column in data_columns))
+    # cleaned_reuters.filter(
+    #     lambda row: all(row[column] is not None for column in data_columns))
 
-    cleaned_reuters.sort(["LastModificationDate"])
+    # cleaned_reuters.apply("Body", lambda row: re.sub(r'[,\.!?]', '', row))
+    # cleaned_reuters.apply("Body", lambda row: ' '.join(
+    #     word for word in row.split() if not word.isdigit()))
+    # # cleaned_reuters.apply(
+    # #     "Body", lambda row: re.sub(r'\b[0-9]+\b\s*', '', row))
+
+    # cleaned_reuters.sort(["LastModificationDate"])
 
     return cleaned_reuters
 

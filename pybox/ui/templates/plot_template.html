@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>PyBox Plot</title>
+</head>
+
+<body style="background-color: #111111;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart" id="bargraph">
+                    <script>
+                        var graph = {{ plot | safe }};
+
+                        (function () {
+                            var d3 = Plotly.d3;
+
+                            var WIDTH_IN_PERCENT_OF_PARENT = 95,
+                                HEIGHT_IN_PERCENT_OF_PARENT = 95;
+
+                            var gd3 = d3.select('body')
+                                .append('div')
+                                .style({
+                                    width: WIDTH_IN_PERCENT_OF_PARENT + '%',
+                                    'margin-left': (100 - WIDTH_IN_PERCENT_OF_PARENT) / 2 + '%',
+
+                                    height: HEIGHT_IN_PERCENT_OF_PARENT + 'vh',
+                                    'margin-top': (100 - HEIGHT_IN_PERCENT_OF_PARENT) / 2 + 'vh'
+                                });
+
+                            var gd = gd3.node();
+
+                            Plotly.plot(gd, graph, {
+                                title: 'Auto-Resize',
+                                font: {
+                                    size: 16
+                                }
+                            });
+
+                            window.onresize = function () {
+                                Plotly.Plots.resize(gd);
+                            };
+
+                        })();
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

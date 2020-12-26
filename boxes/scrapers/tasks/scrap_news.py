@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from boxes.scrapers import DATA_PATH
-from pybox.tools.task import Task
-from pybox.tools.scraper.news_reader import NewsReader
+from pybox.task import Task
+from pybox.scraper.news_reader import NewsReader
 
 from datetime import date, timedelta, datetime
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import Task
+from pybox.task import Task
 
 from gensim.models import Word2Vec
 from nltk.tokenize import sent_tokenize, word_tokenize

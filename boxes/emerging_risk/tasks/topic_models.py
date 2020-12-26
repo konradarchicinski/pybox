@@ -1,205 +1,124 @@
 #!/usr/bin/env python
-from pybox.tools.task import Task
+from pybox.task import Task
 
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
-import numpy as np
-import pandas as pd
-import re
 
 
-def prepare_textual_data(data, processed_column):
-    """
-    [summary]
+def latent_dirichlet_allocation(word_importance, settings):
+    """[summary]
 
     Args:
-        data ([type]): [description]
-        processed_column ([type]): [description]
+        word_importance (DataTable): [description]
+        settings (dict): [description]
     """
-    data[f"{processed_column}Processed"] = data[processed_column].map(
-        lambda row: re.sub(r'[,\.!?]', '', row)
-    )
-    data[f"{processed_column}Processed"] = data[processed_column].map(
-        lambda row: row.lower()
-    )
-
-
-def prepare_results_table(feature_names, model_components):
-    """
-    [summary]
-
-    Args:
-        feature_names ([type]): [description]
-        model_components ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    model_scores = pd.DataFrame(
-        model_components.transpose(),
-        columns=[f"ScoreTopic{i}" for i in range(len(model_components))]
-    )
-    model_words = pd.DataFrame(
-        feature_names,
-        columns=["Word"]
-    )
-
-    return model_words.join(model_scores)
-
-
-def latent_dirichlet_allocation(data, settings):
-    """
-    [summary]
-
-    Args:
-        data ([type]): [description]
-        settings ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    vectorizer_settings = settings["Vectorizer"]
-    processed_column = settings["ProcessedColumn"]
-    lda_params = settings["LDAparams"]
-
-    prepare_textual_data(data, processed_column)
-
-    tf_vectorizer = CountVectorizer(
-        max_df=vectorizer_settings["max_df"],
-        min_df=vectorizer_settings["min_df"],
-        max_features=vectorizer_settings["max_features"],
-        stop_words=vectorizer_settings["stop_words"]
-    )
-    tf = tf_vectorizer.fit_transform(data[f"{processed_column}Processed"])
     lda = LatentDirichletAllocation(
-        n_components=lda_params["ComponentsNumber"],
-        doc_topic_prior=lda_params["Theta"],
-        topic_word_prior=lda_params["Beta"],
-        max_iter=lda_params["MaxIterations"],
-        max_doc_update_iter=lda_params["MaxDocumentUpdatingIterations"]
-    ).fit(tf)
+        n_components=settings["ComponentsNumber"],
+        doc_topic_prior=settings["Theta"],
+        topic_word_prior=settings["Beta"],
+        max_doc_update_iter=settings["MaxDocumentUpdatingIterations"],
+        max_iter=settings["MaxIterations"]).fit(word_importance)
 
-    return prepare_results_table(
-        tf_vectorizer.get_feature_names(), lda.components_)
+    return lda.components_
 
 
-def non_negative_matrix_factorization(data, settings):
-    """
-    [summary]
+def non_negative_matrix_factorization(word_importance, settings):
+    """[summary]
 
     Args:
-        data ([type]): [description]
-        settings ([type]): [description]
-
-    Returns:
-        [type]: [description]
+        word_importance (DataTable): [description]
+        settings (dict): [description]
     """
-    vectorizer_settings = settings["Vectorizer"]
-    processed_column = settings["ProcessedColumn"]
-    nmf_params = settings["NMFparams"]
-
-    prepare_textual_data(data, processed_column)
-
-    tfidf_vectorizer = TfidfVectorizer(
-        max_df=vectorizer_settings["max_df"],
-        min_df=vectorizer_settings["min_df"],
-        max_features=vectorizer_settings["max_features"],
-        stop_words=vectorizer_settings["stop_words"]
-    )
-
-    tfidf = tfidf_vectorizer.fit_transform(
-        data[f"{processed_column}Processed"])
     nmf = NMF(
-        n_components=nmf_params["ComponentsNumber"],
-        init=nmf_params["InitializeMethod"],
-        solver=nmf_params["Solver"],
-        beta_loss=nmf_params["BetaLoss"],
-        max_iter=nmf_params["MaxIterations"],
-        alpha=nmf_params["Alpha"],
-        l1_ratio=nmf_params["l1Ratio"]
-    ).fit(tfidf)
+        n_components=settings["ComponentsNumber"],
+        init=settings["InitializeMethod"],
+        solver=settings["Solver"],
+        beta_loss=settings["BetaLoss"],
+        max_iter=settings["MaxIterations"],
+        alpha=settings["Alpha"],
+        l1_ratio=settings["l1Ratio"]).fit(word_importance)
 
-    return prepare_results_table(
-        tfidf_vectorizer.get_feature_names(), nmf.components_)
+    return nmf.components_
 
 
-task_lda = Task(
-    task_name="TopicModel(LDA)",
-    task_info="""
-    The task is used for...
-    """)
-task_lda.add_setting(
-    name="Vectorizer",
-    default_value={
-        "max_df": 0.95,
-        "min_df": 2,
-        "max_features": 1000,
-        "stop_words": "english"
-    },
-    info="""
-    Defines...
-    """)
-task_lda.add_setting(
-    name="LDAparams",
-    default_value={
-        "ComponentsNumber": 10,
-        "Theta": None,
-        "Beta": None,
-        "MaxIterations": 10,
-        "MaxDocumentUpdatingIterations": 1000
-    },
-    info="""
-    Defines...
-    """)
-task_lda.add_setting(
-    name="ProcessedColumn",
-    default_value="Abstract",
-    info="""
-    Defines...
-    """)
-task_lda.run(
-    main_function=latent_dirichlet_allocation,
-    task_inputs=["PapersFiltered"],
-    task_outputs=["TopicDataLDA"])
+def performe_topic_modelling(word_importance, settings):
+    """[summary]
+
+    Args:
+        word_importance (DataTable): [description]
+        settings (dict): [description]
+    """
+    model_type = settings["Parameters"]["ModelType"]
+
+    if model_type == "LDA":
+        return latent_dirichlet_allocation(word_importance, settings)
+    elif model_type == "NMF":
+        return non_negative_matrix_factorization(word_importance, settings)
 
 
-task_nmf = Task(
-    task_name="TopicModel(NMF)",
-    task_info="""
-    The task is used for...
-    """)
-task_nmf.add_setting(
-    name="Vectorizer",
-    default_value={
-        "max_df": 0.95,
-        "min_df": 2,
-        "max_features": 1000,
-        "stop_words": "english"
-    },
-    info="""
-    Defines...
-    """)
-task_nmf.add_setting(
-    name="NMFparams",
-    default_value={
-        "ComponentsNumber": 10,
-        "InitializeMethod": "nndsvd",
-        "Solver": "mu",
-        "BetaLoss": "kullback-leibler",
-        "MaxIterations": 1000,
-        "Alpha": 0.1,
-        "l1Ratio": 0.5
-    },
-    info="""
-    Defines...
-    """)
-task_nmf.add_setting(
-    name="ProcessedColumn",
-    default_value="Abstract",
-    info="""
-    Defines...
-    """)
-task_nmf.run(
-    main_function=non_negative_matrix_factorization,
-    task_inputs=["PapersFiltered"],
-    task_outputs=["TopicDataNMF"])
+def _dynamic_inputs_creation(dynamic_io_settings):
+    """Creates a list of inputs names, supplied to the Task class."""
+    parameters = dynamic_io_settings["TaskSettings"]["Parameters"]
+
+    if parameters["ModelType"] == "LDA":
+        return [f"TF({parameters['DataSource']})"]
+    elif parameters["ModelType"] == "NMF":
+        return [f"TFIDF({parameters['DataSource']})"]
+
+
+def _dynamic_outputs_creation(dynamic_io_settings):
+    """Creates a list of outputs names, supplied to the Task class."""
+    parameters = dynamic_io_settings["TaskSettings"]["Parameters"]
+
+    return ["TopicData({},{})".format(*parameters.values())]
+
+
+task = Task(
+    task_name="TopicModel(?model_type,?data_source)",
+    task_info="""""")
+task.add_setting(
+    name="ComponentsNumber",
+    default_value=10,
+    info="""""")
+task.add_setting(
+    name="MaxIterations",
+    default_value=10,
+    info="""""")
+task.add_setting(
+    name="Theta",
+    default_value=None,
+    info="""""",
+    task_parameters=["LDA"])
+task.add_setting(
+    name="Beta",
+    default_value=None,
+    info="""""",
+    task_parameters=["LDA"])
+task.add_setting(
+    name="InitializeMethod",
+    default_value="nndsvd",
+    info="""""",
+    task_parameters=["NMF"])
+task.add_setting(
+    name="Solver",
+    default_value="mu",
+    info="""""",
+    task_parameters=["NMF"])
+task.add_setting(
+    name="BetaLoss",
+    default_value="kullback-leibler",
+    info="""""",
+    task_parameters=["NMF"])
+task.add_setting(
+    name="Alpha",
+    default_value=0.1,
+    info="""""",
+    task_parameters=["NMF"])
+task.add_setting(
+    name="l1Ratio",
+    default_value=0.5,
+    info="""""",
+    task_parameters=["NMF"])
+task.run(
+    main_function=performe_topic_modelling,
+    task_inputs=_dynamic_inputs_creation,
+    task_outputs=_dynamic_outputs_creation)

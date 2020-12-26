@@ -69,6 +69,7 @@ def _read_settings_file(settings_path):
     Args:
         settings_path (str): directory of settings module to be read. 
     """
+    # TODO deprecated, should read YAML file not python module.
     spec = importlib.util.spec_from_file_location(
         "task_file_settings", settings_path)
     settings_module = importlib.util.module_from_spec(spec)

@@ -5,9 +5,6 @@
 		}
 	],
 	"settings": {
-		"terminal.integrated.shellArgs.windows": [
-			"/k C:\\cmder\\vendor\\init.bat"
-		],
 		"terminal.integrated.fontSize": 12,
 		"python.terminal.activateEnvInCurrentTerminal": true,
 		"editor.formatOnSave": true,

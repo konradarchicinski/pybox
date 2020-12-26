@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.tools.task import Task
+from pybox.task import Task
 
 
 def calculate_scores(processed_news_data):
