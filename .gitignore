@@ -21,3 +21,6 @@ debug.log
 
 # workspace
 *.code-workspace
+
+# notebooks folder
+/notebooks
