@@ -5,6 +5,8 @@ import pybox.datastore.data_table_row as pbdsdtr
 
 from copy import deepcopy
 from datetime import date, datetime
+from math import ceil, floor
+from tabulate import tabulate
 from tqdm import tqdm
 
 DATA_TYPES = [int, float, complex, bool, str,
@@ -89,7 +91,7 @@ class DataTable:
         return (pbdsdtr.DataTableRow(self, row) for row in range(self.length))
 
     def __str__(self):
-        return f"DataTable({self.width}x{self.length})"
+        return self.as_string()
 
     def __repr__(self):
         return f"DataTable({self.width}x{self.length})"
@@ -157,6 +159,7 @@ class DataTable:
         return arrow_table
 
     def rows(self):
+        """Returns rows interable which called, displays progress bar."""
         return (pbdsdtr.DataTableRow(self, row) for row in tqdm(range(self.length)))
 
     def to_parquet(self, file_name, directory):
@@ -168,6 +171,33 @@ class DataTable:
         """
         from pybox.datastore.data_flow import table_to_parquet
         table_to_parquet(self, file_name, directory)
+
+    def as_string(self, rows_number=10, text_format="simple"):
+        """Returns table in the string format, easily printable in the console.
+
+        Args:
+            rows_number (int, optional): rows number to print. Defaults to 10.
+            text_format (str, optional): string output format. Defaults to `simple`.
+        """
+        if self.length <= rows_number:
+            data_subset = self._data
+            indices = True
+        else:
+            lower_bound = ceil(rows_number / 2)
+            upper_bound = self.length - floor(rows_number / 2)
+
+            data_subset = [*self._data[:lower_bound],
+                           [None for _ in range(self.width)],
+                           *self._data[upper_bound:]]
+            indices = [*[i for i in range(lower_bound)],
+                       "..",
+                       *[i for i in range(upper_bound, self.length)]]
+
+        return tabulate(data_subset,
+                        showindex=indices,
+                        tablefmt=text_format,
+                        headers=[f"{name}\nDataType:{dtype.__name__}"
+                                 for (name, dtype) in self._data_map])
 
     def display(self, rows_number=10, display_type=None, string_length=299):
         """Display the contents of the current DataTable in rendered html format.

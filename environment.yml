@@ -35,4 +35,5 @@ dependencies:
     - cppimport
     - arch
     - numdifftools
+    - tabulate
   
