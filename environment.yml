@@ -24,9 +24,9 @@ dependencies:
   - lxml
   - spacy
   - spacy-lookups-data
+  - whichcraft
   - pip:
     - pep8
-    - spacy[cuda92]
     - autopep8
     - torchtext
     - xmltodict
