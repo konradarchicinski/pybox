@@ -16,8 +16,8 @@
 profile_default/
 ipython_config.py
 
-# Debug
-debug.log
+# Logs
+*.log
 
 # workspace
 *.code-workspace

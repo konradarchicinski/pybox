@@ -66,7 +66,7 @@ class NewsReaderReuters(NewsReader):
         The collected content of a specific article may be: page_address,
         last_modification_date, publishing_date, label, headline and body.
         """
-        time.sleep(0.5)
+        time.sleep(0.25)
         try:
             news_info_bar = self.driver.find_element_by_css_selector(
                 "div[class*='ArticleHeader']")

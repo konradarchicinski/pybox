@@ -12,7 +12,7 @@ import time
 from abc import ABC, abstractproperty
 from datetime import datetime, date
 from importlib import import_module
-from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver import Chrome, ChromeOptions, Firefox, FirefoxOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -159,18 +159,22 @@ class NewsReader(ABC):
             options.use_chromium = True
             options.add_experimental_option("excludeSwitches",
                                             ["enable-logging"])
-            self.driver = Edge(executable_path=f"{EXTERNALS_PATH}/msedgedriver{driver_suffix}",
-                               options=options)
+            self.driver = Edge(
+                executable_path=f"{EXTERNALS_PATH}/msedgedriver{driver_suffix}",
+                options=options)
         elif self.driver_type == "Chrome":
             options = ChromeOptions()
             options.use_chromium = True
-            # setting needed because of chrome cruches on Linux, more info:
-            # https://stackoverflow.com/questions/56637973/how-to-fix-selenium-devtoolsactiveport-file-doesnt-exist-exception-in-python
-            options.add_argument("--remote-debugging-port=9222")
             options.add_experimental_option('excludeSwitches',
                                             ['enable-logging'])
-            self.driver = Chrome(executable_path=f"{EXTERNALS_PATH}/chromedriver{driver_suffix}",
-                                 options=options)
+            self.driver = Chrome(
+                executable_path=f"{EXTERNALS_PATH}/chromedriver{driver_suffix}",
+                options=options)
+        elif self.driver_type == "Firefox":
+            options = FirefoxOptions()
+            self.driver = Firefox(
+                executable_path=f"{EXTERNALS_PATH}/geckodriver{driver_suffix}",
+                options=options)       
         else:
             raise ValueError(
                 f"Not known type of the provided driver: {self.driver_type}")
