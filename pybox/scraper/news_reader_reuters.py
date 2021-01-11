@@ -41,8 +41,7 @@ class NewsReaderReuters(NewsReader):
         whose last modification date is within the specified date range,
         initialized in class settings, are stored.
         """
-        self.setup_driver(main_page="https://www.reuters.com/",
-                          driver_type="Edge")
+        self.setup_driver(main_page="https://www.reuters.com/")
         self.accept_consent_form("accept-recommended-btn-handler")
 
         for web_address in self.xml_web_addresses:

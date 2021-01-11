@@ -11,9 +11,9 @@ _main_init_template = (
     """#!/usr/bin/env python
 import os
 
-DATA_PATH = "\\\\".join(
+DATA_PATH = "/".join(
     [os.path.dirname(os.path.abspath(__file__)), "data"])
-SETTINGS_PATH = "\\\\".join(
+SETTINGS_PATH = "/".join(
     [os.path.dirname(os.path.abspath(__file__)), "settings"])
 """)
 
@@ -26,22 +26,22 @@ def create_box(new_box_name):
     """
     structures = list()
     box_folder = camel_to_snake_case(new_box_name)
-    box_directory = f"{BOXES_PATH}\\{box_folder}"
-    data_directory = f"{box_directory}\\data"
-    tasks_directory = f"{box_directory}\\tasks"
-    settings_directory = f"{box_directory}\\settings"
+    box_directory = f"{BOXES_PATH}/{box_folder}"
+    data_directory = f"{box_directory}/data"
+    tasks_directory = f"{box_directory}/tasks"
+    settings_directory = f"{box_directory}/settings"
 
     init = "__init__.py"
     data_settings = "data_settings.yaml"
 
     structures.append((box_directory, None))
-    structures.append((f"{box_directory}\\{init}", _main_init_template))
+    structures.append((f"{box_directory}/{init}", _main_init_template))
     structures.append((data_directory, None))
-    structures.append((f"{data_directory}\\{data_settings}", _empty_template))
+    structures.append((f"{data_directory}/{data_settings}", _empty_template))
     structures.append((tasks_directory, None))
-    structures.append((f"{tasks_directory}\\{init}", _empty_template))
+    structures.append((f"{tasks_directory}/{init}", _empty_template))
     structures.append((settings_directory, None))
-    structures.append((f"{settings_directory}\\{init}", _empty_template))
+    structures.append((f"{settings_directory}/{init}", _empty_template))
 
     for (name, value) in structures:
         if not os.path.exists(name):

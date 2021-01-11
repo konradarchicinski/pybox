@@ -67,6 +67,12 @@ task.add_setting(
     The name of the source webpage such as `Reuters` or `Bloomberg`.
     """)
 task.add_setting(
+    name="DriverType",
+    default_value="Chrome",
+    info="""
+    Type of the selenium driver to be used.
+    """)
+task.add_setting(
     name="NewestNewsDate",
     default_value=str(date.today()),
     info="""
