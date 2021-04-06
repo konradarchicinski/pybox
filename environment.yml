@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.8.5
   - pip
+  - pycodestyle
   - ipython
   - jupyter
   - numpy
@@ -25,8 +26,7 @@ dependencies:
   - spacy
   - spacy-lookups-data
   - pip:
-    - pep8
-    - spacy[cuda92]
+    - spacy[cuda111]
     - autopep8
     - torchtext
     - xmltodict
