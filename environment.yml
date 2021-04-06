@@ -25,6 +25,7 @@ dependencies:
   - lxml
   - spacy
   - spacy-lookups-data
+  - whichcraft
   - pip:
     - spacy[cuda111]
     - autopep8

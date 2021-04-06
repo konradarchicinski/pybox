@@ -41,8 +41,7 @@ class NewsReaderReuters(NewsReader):
         whose last modification date is within the specified date range,
         initialized in class settings, are stored.
         """
-        self.setup_driver(main_page="https://www.reuters.com/",
-                          driver_type="Edge")
+        self.setup_driver(main_page="https://www.reuters.com/")
         self.accept_consent_form("accept-recommended-btn-handler")
 
         for web_address in self.xml_web_addresses:
@@ -67,7 +66,7 @@ class NewsReaderReuters(NewsReader):
         The collected content of a specific article may be: page_address,
         last_modification_date, publishing_date, label, headline and body.
         """
-        time.sleep(0.5)
+        time.sleep(0.25)
         try:
             news_info_bar = self.driver.find_element_by_css_selector(
                 "div[class*='ArticleHeader']")

@@ -12,7 +12,7 @@ import time
 from abc import ABC, abstractproperty
 from datetime import datetime, date
 from importlib import import_module
-from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver import Chrome, ChromeOptions, Firefox, FirefoxOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -55,7 +55,8 @@ class NewsReader(ABC):
     staticmethod and pass the name of the service as an source argument.
     """
 
-    def __init__(self, oldest_news_date=None, newest_news_date=None):
+    def __init__(self, driver_type="Chrome", oldest_news_date=None, 
+                 newest_news_date=None):
         if not newest_news_date:
             self.newest_news_date = datetime.combine(
                 date.today(), datetime.max.time())
@@ -66,6 +67,7 @@ class NewsReader(ABC):
         else:
             self.oldest_news_date = to_datetime(oldest_news_date)
 
+        self.driver_type = driver_type
         self.news_data = DataTable(
             names=["PageAddress", "LastModificationDate",
                    "PublishingDate", "Label", "Headline", "Body"],
@@ -139,32 +141,43 @@ class NewsReader(ABC):
         """
         pass
 
-    def setup_driver(self, main_page, driver_type="Chrome"):
+    def setup_driver(self, main_page):
         """Setup Selenium WebDriver which drives a browser natively, as a user
         would, either locally or on a remote machine using the Selenium server.
 
         Args:
 
             main_page(str): main page address.
-            driver_type (str): name of used driver, Chrome or Edge.
         """
-        if driver_type == "Edge":
+        if sys.platform in ["win32", "win64"]:
+            driver_suffix = "_win.exe"
+        elif sys.platform.startswith("linux"):
+            driver_suffix = "_linux"
+
+        if self.driver_type == "Edge":
             options = EdgeOptions()
             options.use_chromium = True
             options.add_experimental_option("excludeSwitches",
                                             ["enable-logging"])
-            self.driver = Edge(EXTERNALS_PATH + "\\msedgedriver.exe",
-                               options=options)
-        elif driver_type == "Chrome":
+            self.driver = Edge(
+                executable_path=f"{EXTERNALS_PATH}/msedgedriver{driver_suffix}",
+                options=options)
+        elif self.driver_type == "Chrome":
             options = ChromeOptions()
             options.use_chromium = True
             options.add_experimental_option('excludeSwitches',
                                             ['enable-logging'])
-            self.driver = Chrome(EXTERNALS_PATH + "\\chromedriver.exe",
-                                 options=options)
+            self.driver = Chrome(
+                executable_path=f"{EXTERNALS_PATH}/chromedriver{driver_suffix}",
+                options=options)
+        elif self.driver_type == "Firefox":
+            options = FirefoxOptions()
+            self.driver = Firefox(
+                executable_path=f"{EXTERNALS_PATH}/geckodriver{driver_suffix}",
+                options=options)       
         else:
             raise ValueError(
-                f"Not known type of the provided driver: {driver_type}")
+                f"Not known type of the provided driver: {self.driver_type}")
         self.driver.get(main_page)
 
     def accept_consent_form(self, button_id):
