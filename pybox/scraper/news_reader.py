@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pybox.GLOBALS import EXTERNALS_PATH, GLOBAL_DATA_PATH
+from pybox.GLOBALS import EXTERN_PATH, GLOBAL_DATA_PATH
 from pybox.datastore.data_table import DataTable
 from pybox.helpers.text import camel_to_snake_case
 from pybox.helpers.date import to_datetime
@@ -55,7 +55,7 @@ class NewsReader(ABC):
     staticmethod and pass the name of the service as an source argument.
     """
 
-    def __init__(self, driver_type="Chrome", oldest_news_date=None, 
+    def __init__(self, driver_type="Chrome", oldest_news_date=None,
                  newest_news_date=None):
         if not newest_news_date:
             self.newest_news_date = datetime.combine(
@@ -160,7 +160,7 @@ class NewsReader(ABC):
             options.add_experimental_option("excludeSwitches",
                                             ["enable-logging"])
             self.driver = Edge(
-                executable_path=f"{EXTERNALS_PATH}/msedgedriver{driver_suffix}",
+                executable_path=f"{EXTERN_PATH}/msedgedriver{driver_suffix}",
                 options=options)
         elif self.driver_type == "Chrome":
             options = ChromeOptions()
@@ -168,13 +168,13 @@ class NewsReader(ABC):
             options.add_experimental_option('excludeSwitches',
                                             ['enable-logging'])
             self.driver = Chrome(
-                executable_path=f"{EXTERNALS_PATH}/chromedriver{driver_suffix}",
+                executable_path=f"{EXTERN_PATH}/chromedriver{driver_suffix}",
                 options=options)
         elif self.driver_type == "Firefox":
             options = FirefoxOptions()
             self.driver = Firefox(
-                executable_path=f"{EXTERNALS_PATH}/geckodriver{driver_suffix}",
-                options=options)       
+                executable_path=f"{EXTERN_PATH}/geckodriver{driver_suffix}",
+                options=options)
         else:
             raise ValueError(
                 f"Not known type of the provided driver: {self.driver_type}")
