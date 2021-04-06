@@ -5,10 +5,8 @@ from pybox.helpers.text import camel_to_snake_case
 import os
 import argparse
 
-
 _empty_template = ""
-_main_init_template = (
-    """#!/usr/bin/env python
+_main_init_template = ("""#!/usr/bin/env python
 import os
 
 DATA_PATH = "/".join(

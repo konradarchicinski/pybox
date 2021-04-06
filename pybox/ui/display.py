@@ -26,14 +26,13 @@ def datatable(data, static=True, length_limit=None):
     html_table = data.as_string(rows_number=length_limit, text_format="html")
     # Stylistic improvement, headers section is removed from html
     # to create a space for a better looking one.
-    html_table = html_table[
-        html_table.index("<tbody>"):html_table.rindex("</table>")]
+    html_table = html_table[html_table.index("<tbody>"):html_table.
+                            rindex("</table>")]
 
     html_head = create_datatable_header(data._data_map)
 
     app = _initiate_app("table_template.html",
-                        dict(table_head=html_head,
-                             table_body=html_table),
+                        dict(table_head=html_head, table_body=html_table),
                         static)
     _run_app(app)
 
@@ -48,10 +47,9 @@ def surface(data, static=True):
             should be static or dynamic. Defaults to True.
     """
     plotly_surface = plotly_figures.surface(data)
-    app = _initiate_app("plotly_template.html",
-                        dict(figure=json.dumps(
-                            plotly_surface, cls=PlotlyJSONEncoder)),
-                        static)
+    app = _initiate_app(
+        "plotly_template.html",
+        dict(figure=json.dumps(plotly_surface, cls=PlotlyJSONEncoder)), static)
     _run_app(app)
 
 

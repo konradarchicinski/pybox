@@ -5,16 +5,15 @@ channels:
 dependencies:
   - python=3.8.5
   - pip
-  - pycodestyle
   - ipython
-  - jupyter
   - numpy
   - numba
   - pyarrow
   - pytorch
+  - keras
+  - tensorflow
   - plotly
   - scikit-learn
-  - gensim
   - scipy
   - nltk
   - flask
@@ -27,14 +26,13 @@ dependencies:
   - spacy-lookups-data
   - whichcraft
   - pip:
-    - spacy[cuda111]
-    - autopep8
+    - spacy[cuda112]
+    - yapf
     - torchtext
     - xmltodict
     - msedge-selenium-tools
     - pybind11
     - cppimport
-    - arch
     - numdifftools
     - tabulate
   

@@ -21,9 +21,7 @@ def recognize_type(vector):
             vector_types[type(element)] += 1
         except KeyError:
             vector_types[type(element)] = 0
-    recognized_type = max(
-        vector_types.items(),
-        key=itemgetter(1))[0]
+    recognized_type = max(vector_types.items(), key=itemgetter(1))[0]
     return recognized_type
 
 
@@ -62,8 +60,7 @@ def binary_search(lookup_list, lookup_value, low_end=0, high_end=None):
         high_end = len(lookup_list)
 
     position = bisect_left(lookup_list, lookup_value, low_end, high_end)
-    if (position != high_end and
-        lookup_list[position] == lookup_value and
+    if (position != high_end and lookup_list[position] == lookup_value and
             type(lookup_list[position]) == type(lookup_value)):
         return position
     else:
@@ -79,8 +76,13 @@ def byte_size(measurable_object):
     Method below is a modification of the code presented in:
     `https://code.activestate.com/recipes/577504/`.
     """
-    all_handlers = {tuple: iter, list: iter, set: iter, frozenset: iter,
-                    dict: lambda d: chain.from_iterable(d.items())}
+    all_handlers = {
+        tuple: iter,
+        list: iter,
+        set: iter,
+        frozenset: iter,
+        dict: lambda d: chain.from_iterable(d.items())
+    }
     seen = set()
     default_size = getsizeof(0)
 
@@ -94,4 +96,5 @@ def byte_size(measurable_object):
                 size += sum(map(_sizeof, handler(obj)))
                 break
         return size
+
     return _sizeof(measurable_object)

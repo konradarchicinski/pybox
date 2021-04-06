@@ -22,16 +22,19 @@ def show_table(data, data_map, rows_number, string_length=255):
 
     html_table_fragment = _create_table_header(data_map)
     if data_length > rows_number:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map,
-            range(ceil(rows_number / 2)), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map,
+                                                 range(ceil(rows_number / 2)),
+                                                 string_length)
         html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
         html_table_fragment = _create_table_body(
             html_table_fragment, data, data_map,
-            range(data_length - floor(rows_number / 2), data_length), string_length)
+            range(data_length - floor(rows_number / 2), data_length),
+            string_length)
     else:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map, range(data_length), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map, range(data_length),
+                                                 string_length)
 
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
@@ -60,8 +63,9 @@ def show_table_random(data, data_map, rows_number, string_length=255):
             html_table_fragment, data, data_map,
             sample(range(0, data_length), rows_number), string_length)
     else:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map, range(data_length), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map, range(data_length),
+                                                 string_length)
 
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
@@ -85,12 +89,15 @@ def show_table_head(data, data_map, rows_number, string_length=255):
 
     html_table_fragment = _create_table_header(data_map)
     if data_length > rows_number:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map, range(ceil(rows_number)), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map,
+                                                 range(ceil(rows_number)),
+                                                 string_length)
         html_table_fragment = _add_dotted_row(html_table_fragment, data_map)
     else:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map, range(data_length), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map, range(data_length),
+                                                 string_length)
 
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
@@ -119,8 +126,9 @@ def show_table_tail(data, data_map, rows_number, string_length=255):
             html_table_fragment, data, data_map,
             range(data_length - ceil(rows_number), data_length), string_length)
     else:
-        html_table_fragment = _create_table_body(
-            html_table_fragment, data, data_map, range(data_length), string_length)
+        html_table_fragment = _create_table_body(html_table_fragment, data,
+                                                 data_map, range(data_length),
+                                                 string_length)
 
     html_table_fragment = "".join([html_table_fragment, "</table>"])
     display(HTML(html_table_fragment))
@@ -145,7 +153,8 @@ def _create_table_header(data_map):
     return html_table_fragment
 
 
-def _create_table_body(html_table_fragment, data, data_map, iterator, string_length):
+def _create_table_body(html_table_fragment, data, data_map, iterator,
+                       string_length):
     """Returns a string containing the table body in html format.
 
     Args:
@@ -163,12 +172,13 @@ def _create_table_body(html_table_fragment, data, data_map, iterator, string_len
 
     for index in iterator:
         html_table_fragment = "".join(
-            [html_table_fragment, "<tr>\n<td>", str(index), "</td>\n"])
+            [html_table_fragment, "<tr>\n<td>",
+             str(index), "</td>\n"])
         for column_index, _ in enumerate(data_map):
             html_table_fragment = "".join([
                 html_table_fragment, "<td style='text-align:left;'>",
-                _cell_interior(data[index][column_index],
-                               string_length), "</td>\n"
+                _cell_interior(data[index][column_index], string_length),
+                "</td>\n"
             ])
         html_table_fragment = "".join([html_table_fragment, "</tr>\n"])
     return html_table_fragment
@@ -199,8 +209,7 @@ def _add_dotted_row(html_table_fragment, data_map):
             the index representing the column position in the array (int),
             the data type appearing in the column (type).
     """
-    html_table_fragment = "".join(
-        [html_table_fragment, "<tr>\n<td>...</td>\n"])
+    html_table_fragment = "".join([html_table_fragment, "<tr>\n<td>...</td>\n"])
     for _ in data_map:
         html_table_fragment = "".join(
             [html_table_fragment, "<td style='text-align:left;'>...</td>\n"])

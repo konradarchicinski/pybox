@@ -26,7 +26,8 @@ def create_connection(database_name, database_directory=GLOBAL_DATA_PATH):
     return connection
 
 
-def check_if_table_exists(table_name, database_name,
+def check_if_table_exists(table_name,
+                          database_name,
                           database_directory=GLOBAL_DATA_PATH):
 
     # Check if in a given SQLite database exists certain table.

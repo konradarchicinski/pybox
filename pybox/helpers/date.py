@@ -27,8 +27,8 @@ def to_datetime(date_input):
     if date_input is None:
         return None
     elif isinstance(date_input, date):
-        return to_local_time_zone(datetime.combine(
-            date_input, datetime.min.time()))
+        return to_local_time_zone(
+            datetime.combine(date_input, datetime.min.time()))
     else:
         return to_local_time_zone(parse(date_input))
 
@@ -55,5 +55,5 @@ def create_dates_list(ending_date, starting_date):
     # TODO create something more universal, not only for days.
     return [
         ending_date - timedelta(days=i)
-        for i in range((ending_date-starting_date).days + 1)
+        for i in range((ending_date - starting_date).days + 1)
     ]
