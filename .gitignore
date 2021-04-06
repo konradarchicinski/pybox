@@ -7,7 +7,7 @@
 # Data
 *.parquet
 *.txt
-*.tar.gz
+*.csv
 
 # Python
 *__pycache__
@@ -23,4 +23,4 @@ debug.log
 *.code-workspace
 
 # notebooks folder
-/notebooks
+*/notebooks
