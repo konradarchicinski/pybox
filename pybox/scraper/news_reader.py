@@ -41,6 +41,7 @@ def emergency_data_protector(function):
                 "Occurred error, collected stories were saved in data folder.")
             print(exception_traceback)
             sys.exit()
+
     return wrapper
 
 
@@ -55,11 +56,13 @@ class NewsReader(ABC):
     staticmethod and pass the name of the service as an source argument.
     """
 
-    def __init__(self, driver_type="Chrome", oldest_news_date=None,
+    def __init__(self,
+                 driver_type="Chrome",
+                 oldest_news_date=None,
                  newest_news_date=None):
         if not newest_news_date:
-            self.newest_news_date = datetime.combine(
-                date.today(), datetime.max.time())
+            self.newest_news_date = datetime.combine(date.today(),
+                                                     datetime.max.time())
         else:
             self.newest_news_date = to_datetime(newest_news_date)
         if not oldest_news_date:
@@ -69,8 +72,10 @@ class NewsReader(ABC):
 
         self.driver_type = driver_type
         self.news_data = DataTable(
-            names=["PageAddress", "LastModificationDate",
-                   "PublishingDate", "Label", "Headline", "Body"],
+            names=[
+                "PageAddress", "LastModificationDate", "PublishingDate",
+                "Label", "Headline", "Body"
+            ],
             dtypes=[str, datetime, datetime, str, str, str])
 
     @staticmethod
@@ -102,15 +107,17 @@ class NewsReader(ABC):
                 children = NewsReader.__subclasses__()
                 for child in children:
                     if child.__name__ == f"NewsReader{source}":
-                        reader_settings = {camel_to_snake_case(key): value
-                                           for key, value in reader_settings.items()}
+                        reader_settings = {
+                            camel_to_snake_case(key): value
+                            for key, value in reader_settings.items()
+                        }
                         scraper = child(**reader_settings)
                         scraper.source = source
                         scraper.data_path = data_path
                         return scraper
-                raise ValueError((
-                    f"Module `{module}` has been inspected but no proper"
-                    " implementation of `NewsReader` was found there."))
+                raise ValueError(
+                    (f"Module `{module}` has been inspected but no proper"
+                     " implementation of `NewsReader` was found there."))
         raise ValueError(
             f"No suitable NewsReader implementation was found for `{source}`.")
 
@@ -211,10 +218,16 @@ class NewsReader(ABC):
         else:
             info_fragment = "storage"
         logging.warning(
-            f"There has been problem with {info_fragment} of a news:\n\t{news_link}")
+            f"There has been problem with {info_fragment} of a news:\n\t{news_link}"
+        )
 
-    def store_news(self, page_address, last_modification_date=None,
-                   publishing_date=None, label=None, headline=None, body=None):
+    def store_news(self,
+                   page_address,
+                   last_modification_date=None,
+                   publishing_date=None,
+                   label=None,
+                   headline=None,
+                   body=None):
         """Store items from the news, add them to the DataTable `news_data`
         and display the success log message.
 
@@ -231,9 +244,10 @@ class NewsReader(ABC):
             body (str, optional): main news content, containing all news
                 paragraphs. Defaults to None.
         """
-        self.news_data.insert_row(
-            [page_address, last_modification_date,
-             publishing_date, label, headline, body])
+        self.news_data.insert_row([
+            page_address, last_modification_date, publishing_date, label,
+            headline, body
+        ])
 
         if headline is None:
             headline = "ARTICLE_WITHOUT_HEADLINE"
@@ -241,7 +255,7 @@ class NewsReader(ABC):
         if len(headline) > 50:
             truncated_headline = f"{headline[:50]}.."
         else:
-            truncated_headline = headline + " "*(52-len(headline))
+            truncated_headline = headline + " " * (52 - len(headline))
         logging.info(
             (f"{truncated_headline} from "
              f"{last_modification_date.strftime('%Y-%m-%d %H:%M')} stored"))
@@ -259,8 +273,9 @@ class NewsReader(ABC):
         oldest_date = self.news_data['LastModificationDate', -1]
         newest_date = self.news_data['LastModificationDate', 0]
 
-        file_name = "".join(
-            [self.source, "(",
-             oldest_date.strftime("%Y_%m_%d_%H_%M"), ",",
-             newest_date.strftime("%Y_%m_%d_%H_%M"), ")"])
+        file_name = "".join([
+            self.source, "(",
+            oldest_date.strftime("%Y_%m_%d_%H_%M"), ",",
+            newest_date.strftime("%Y_%m_%d_%H_%M"), ")"
+        ])
         self.news_data.to_parquet(file_name, data_directory)

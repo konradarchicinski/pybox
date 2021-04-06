@@ -30,10 +30,16 @@ def run_test(test_name, test_type):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--test_name', '-tn',
-                        action='store', type=str, required=True)
-    parser.add_argument('--test_type', '-tt', action='store',
-                        type=str, default="Python")
+    parser.add_argument('--test_name',
+                        '-tn',
+                        action='store',
+                        type=str,
+                        required=True)
+    parser.add_argument('--test_type',
+                        '-tt',
+                        action='store',
+                        type=str,
+                        default="Python")
     args = parser.parse_args()
 
     run_test(args.test_name, args.test_type)

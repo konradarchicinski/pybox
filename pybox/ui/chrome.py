@@ -28,13 +28,16 @@ def run(start_urls, chrome_path=None, options=None):
 
     if options['app_mode']:
         for url in start_urls:
-            sps.Popen([chrome_path, '--app=%s' % url] +
-                      options['cmdline_args'],
-                      stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE)
+            sps.Popen([chrome_path, '--app=%s' % url] + options['cmdline_args'],
+                      stdout=sps.PIPE,
+                      stderr=sps.PIPE,
+                      stdin=sps.PIPE)
     else:
         args = options['cmdline_args'] + start_urls
         sps.Popen([chrome_path, '--new-window'] + args,
-                  stdout=sps.PIPE, stderr=sys.stderr, stdin=sps.PIPE)
+                  stdout=sps.PIPE,
+                  stderr=sys.stderr,
+                  stdin=sps.PIPE)
 
 
 def find_path():
@@ -55,8 +58,10 @@ def _find_chrome_mac():
         return default_dir
     # use mdfind ci to locate Chrome in alternate locations and return the first one
     name = 'Google Chrome.app'
-    alternate_dirs = [x for x in sps.check_output(
-        ["mdfind", name]).decode().split('\n') if x.endswith(name)]
+    alternate_dirs = [
+        x for x in sps.check_output(["mdfind", name]).decode().split('\n')
+        if x.endswith(name)
+    ]
     if len(alternate_dirs):
         return alternate_dirs[0] + '/Contents/MacOS/Google Chrome'
     return None
@@ -68,8 +73,10 @@ def _find_chromium_mac():
         return default_dir
     # use mdfind ci to locate Chromium in alternate locations and return the first one
     name = 'Chromium.app'
-    alternate_dirs = [x for x in sps.check_output(
-        ["mdfind", name]).decode().split('\n') if x.endswith(name)]
+    alternate_dirs = [
+        x for x in sps.check_output(["mdfind", name]).decode().split('\n')
+        if x.endswith(name)
+    ]
     if len(alternate_dirs):
         return alternate_dirs[0] + '/Contents/MacOS/Chromium'
     return None
@@ -77,10 +84,9 @@ def _find_chromium_mac():
 
 def _find_chrome_linux():
     import whichcraft as wch
-    chrome_names = ['chromium-browser',
-                    'chromium',
-                    'google-chrome',
-                    'google-chrome-stable']
+    chrome_names = [
+        'chromium-browser', 'chromium', 'google-chrome', 'google-chrome-stable'
+    ]
 
     for name in chrome_names:
         chrome = wch.which(name)

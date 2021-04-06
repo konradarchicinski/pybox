@@ -45,14 +45,15 @@ class Task:
             raw_settings = yaml.load(settings, Loader=yaml.FullLoader)
         for name, value in raw_settings.items():
             # Adjustments of the info string to prepare long string for printing.
-            indentation = "\n" + " "*4
+            indentation = "\n" + " " * 4
             value["info"] = "".join([indentation, value['info'], indentation])
             for i in range(1, len(value["info"])):
                 if i % 70 == 0:
                     break_line_index = value["info"].find(" ", i)
                     value["info"] = indentation.join([
                         value["info"][:break_line_index],
-                        value["info"][break_line_index + 1:]])
+                        value["info"][break_line_index + 1:]
+                    ])
 
             self.task_settings[name] = value["value"]
             self.task_settings_info[name] = value["info"]
@@ -113,7 +114,8 @@ class Task:
                         logging.info(
                             f"\tInput file called `{name}` was not found.")
                         logging.info(
-                            "\tSearching the task with a given name initiated...")
+                            "\tSearching the task with a given name initiated..."
+                        )
 
                         pbrt.run_selected_module(
                             supplied_task_name=name,
@@ -137,10 +139,9 @@ class Task:
                 if not isinstance(outputs, tuple):
                     outputs = tuple([outputs])
                 for output, name in zip(outputs, task_outputs):
-                    pbddf.table_to_parquet(
-                        table=output,
-                        file_name=name,
-                        directory=self.outputs_directory)
+                    pbddf.table_to_parquet(table=output,
+                                           file_name=name,
+                                           directory=self.outputs_directory)
             else:
                 main_function(*function_input_list)
 
@@ -164,27 +165,27 @@ class Task:
             self.task_name = task_name
             if self.parameters:
                 self.task_settings["Parameters"] = dict()
-                for parameter, supplied_parameter in zip(task_parameters, supplied_parameters):
-                    self.task_settings["Parameters"][
-                        snake_to_camel_case(parameter.strip("?"))] = supplied_parameter
+                for parameter, supplied_parameter in zip(
+                        task_parameters, supplied_parameters):
+                    self.task_settings["Parameters"][snake_to_camel_case(
+                        parameter.strip("?"))] = supplied_parameter
                     self.task_name = self.task_name.replace(
                         parameter, supplied_parameter)
         else:
-            raise ValueError((
-                f"Provided parameters {supplied_parameters} do not"
-                f" match the expected ones {task_parameters}."))
+            raise ValueError(
+                (f"Provided parameters {supplied_parameters} do not"
+                 f" match the expected ones {task_parameters}."))
 
     def _print_task_info(self):
         """Displays basic information about called task."""
         help_string = "".join(["\nTask Info:", self.task_info])
 
         for name, info in self.task_settings_info.items():
-            help_string = "".join(
-                [help_string, "\nTask setting arguments:\n- ",
-                 name, " ", str(type(self.task_settings[name])),
-                 info, "- default value: ",
-                 str(self.task_settings[name]), "\n"]
-            )
+            help_string = "".join([
+                help_string, "\nTask setting arguments:\n- ", name, " ",
+                str(type(self.task_settings[name])), info, "- default value: ",
+                str(self.task_settings[name]), "\n"
+            ])
         print(help_string)
 
     def _prepare_io_list(self, task_io, io_type):
@@ -248,6 +249,6 @@ def retrieve_parameters(task_name):
     end = task_name.find(")")
 
     if -1 not in [start, end]:
-        return task_name[start+1:end].split(",")
+        return task_name[start + 1:end].split(",")
     else:
         return list()

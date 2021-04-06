@@ -20,8 +20,8 @@ class TimeSeriesModel:
                  disturbance_term_settings=dict()):
         self.estimates = dict()
 
-        self.mean_process = self._create_process(
-            mean_process, mean_process_settings)
+        self.mean_process = self._create_process(mean_process,
+                                                 mean_process_settings)
 
         self.volatility_process = self._create_process(
             volatility_process, volatility_process_settings)
@@ -37,13 +37,13 @@ class TimeSeriesModel:
         mean = np.mean(residuals)
 
         standardized_residuals = (residuals - mean) / standard_deviation
-        distribution_parameters = {dp: self.estimates[dp]
-                                   for dp
-                                   in self.disturbance_term.parameters}
+        distribution_parameters = {
+            dp: self.estimates[dp] for dp in self.disturbance_term.parameters
+        }
 
         likelihood = self.disturbance_terms.pdf(
-            standardized_residuals,
-            **distribution_parameters) / standard_deviation
+            standardized_residuals, **
+            distribution_parameters) / standard_deviation
 
         # removing the zeros so as not to put them into logarithms
         likelihood = likelihood[likelihood != 0.0]
@@ -77,7 +77,7 @@ class TimeSeriesModel:
 
     def _akaike_information_criterion(self, parameters, data):
         self._update_estimates(parameters)
-        return 2*(len(self.estimates) - self.log_likelihood(data))
+        return 2 * (len(self.estimates) - self.log_likelihood(data))
 
     def _update_estimates(self, parameters):
         for i, estimate in enumerate(self.estimates):
@@ -94,16 +94,18 @@ class TimeSeriesModel:
 
     def _create_process(self, process_name, process_settings):
         for module in os.listdir(os.path.dirname(__file__)):
-            if module in [f"{process_name.lower()}.py",
-                          f"{camel_to_snake_case(process_name)}.py"]:
+            if module in [
+                    f"{process_name.lower()}.py",
+                    f"{camel_to_snake_case(process_name)}.py"
+            ]:
                 imported_module = import_module(f".{module[:-3]}", __package__)
                 models = inspect.getmembers(imported_module, inspect.isclass)
                 for model_name, model in models:
                     if model_name == process_name:
                         time_series_process = model(process_settings)
                         return time_series_process
-                raise ValueError((
-                    f"Module `{module}` has been inspected but no proper"
-                    " implementation of time series process was found there."))
+                raise ValueError(
+                    (f"Module `{module}` has been inspected but no proper"
+                     " implementation of time series process was found there."))
         raise ValueError(("No suitable `TimeSeriesModel` implementation"
                           f" was found for `{process_name}`."))

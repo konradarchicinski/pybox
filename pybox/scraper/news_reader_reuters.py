@@ -3,7 +3,6 @@ from pybox.scraper.news_reader import NewsReader, emergency_data_protector
 from pybox.helpers.date import to_datetime, create_dates_list
 from pybox.datastore.data_flow import dict_from_xml
 
-
 import time
 
 
@@ -75,8 +74,8 @@ class NewsReaderReuters(NewsReader):
             # determines the time since the last update. By default,
             # only first two are interesting.
             time_tags = news_info_bar.find_elements_by_tag_name('time')[:2]
-            self.news_content["publishing_date"] = to_datetime(
-                " ".join([time.text for time in time_tags]))
+            self.news_content["publishing_date"] = to_datetime(" ".join(
+                [time.text for time in time_tags]))
 
             # In some articles the label can be found under the `a` tag,
             # in others it is under the `p` tag. Determining it as follows
@@ -84,8 +83,9 @@ class NewsReaderReuters(NewsReader):
             # by the `\n` sign, therefore dividing the entire bar with its
             # help enables a simple and universal selection of the label.
             self.news_content["label"] = news_info_bar.text.split("\n", 1)[0]
-            self.news_content["headline"] = self.driver.find_element_by_css_selector(
-                "h1[class^='Headline']").text
+            self.news_content[
+                "headline"] = self.driver.find_element_by_css_selector(
+                    "h1[class^='Headline']").text
 
             body_wrapper = self.driver.find_element_by_css_selector(
                 "div[class*='ArticleBodyWrapper']")
@@ -97,11 +97,12 @@ class NewsReaderReuters(NewsReader):
             self.news_content["body"] = "\n".join(
                 [p.text for p in paragraphs + preformatteds])
 
-            news_problems = [key for key,
-                             value in self.news_content.items() if not value]
+            news_problems = [
+                key for key, value in self.news_content.items() if not value
+            ]
             if news_problems:
-                self.handle_news_exception(
-                    self.news_content["page_address"], news_problems)
+                self.handle_news_exception(self.news_content["page_address"],
+                                           news_problems)
 
         except Exception:
             self.handle_news_exception(self.news_content["page_address"])
@@ -118,14 +119,13 @@ class NewsReaderReuters(NewsReader):
 
             `https://www.reuters.com/sitemap_20200101-20200102.xml`
         """
-        dates_list = create_dates_list(
-            self.newest_news_date, self.oldest_news_date)
+        dates_list = create_dates_list(self.newest_news_date,
+                                       self.oldest_news_date)
 
         addresses = list()
-        for idx in range(len(dates_list)-1):
-            xml_web_address = (
-                "https://www.reuters.com/sitemap_"
-                f"{dates_list[idx+1].strftime('%Y%m%d')}-"
-                f"{dates_list[idx].strftime('%Y%m%d')}.xml")
+        for idx in range(len(dates_list) - 1):
+            xml_web_address = ("https://www.reuters.com/sitemap_"
+                               f"{dates_list[idx+1].strftime('%Y%m%d')}-"
+                               f"{dates_list[idx].strftime('%Y%m%d')}.xml")
             addresses.append(xml_web_address)
         return addresses

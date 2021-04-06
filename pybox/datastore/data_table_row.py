@@ -11,9 +11,11 @@ class DataTableRow:
         self.row_index = row_index
         self.instance = instance
 
-        self.content = {column_name: self.instance._data[self.row_index][column_index]
-                        for column_index, (column_name, _)
-                        in enumerate(self.instance._data_map)}
+        self.content = {
+            column_name: self.instance._data[self.row_index][column_index]
+            for column_index, (column_name,
+                               _) in enumerate(self.instance._data_map)
+        }
 
     def __getitem__(self, key):
         if isinstance(key, str):

@@ -87,13 +87,13 @@ def setup_datasets(ngrams, vocabulary=None, include_unk=False):
 
     logging.info("Creating training data")
     train_data, train_labels = _create_data_from_iterator(
-        vocabulary,
-        _data_iterator(train_data_rows, ngrams, yield_cls=True), include_unk)
+        vocabulary, _data_iterator(train_data_rows, ngrams, yield_cls=True),
+        include_unk)
 
     logging.info("Creating testing data")
     test_data, test_labels = _create_data_from_iterator(
-        vocabulary,
-        _data_iterator(test_data_rows, ngrams, yield_cls=True), include_unk)
+        vocabulary, _data_iterator(test_data_rows, ngrams, yield_cls=True),
+        include_unk)
 
     if len(train_labels ^ test_labels) > 0:
         raise ValueError("Training and test labels don't match")
@@ -143,9 +143,8 @@ def _create_data_from_iterator(vocabulary, iterator, include_unk):
                 tokens = tensor([vocabulary[token] for token in tokens])
             else:
                 token_ids = list(
-                    filter(
-                        lambda x: x is not Vocab.UNK,
-                        [vocabulary[token] for token in tokens]))
+                    filter(lambda x: x is not Vocab.UNK,
+                           [vocabulary[token] for token in tokens]))
                 tokens = tensor(token_ids)
             if len(tokens) == 0:
                 logging.info('Row contains no tokens.')

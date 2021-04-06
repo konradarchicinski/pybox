@@ -39,7 +39,8 @@ def create_task(task_name, box_name):
         file_path = f"{box_tasks_directory}/{function_name}.py"
 
         with open(file_path, "w") as task_file:
-            print(new_task_template.format(function_name, task_name, function_name),
+            print(new_task_template.format(function_name, task_name,
+                                           function_name),
                   file=task_file)
     else:
         raise ValueError(

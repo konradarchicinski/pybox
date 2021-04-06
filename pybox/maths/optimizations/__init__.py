@@ -17,17 +17,18 @@ class Optimizer(ABC):
         if method is None:
             method = "BFGS"
         for module in os.listdir(os.path.dirname(__file__)):
-            if module in [f"{method.lower()}.py",
-                          f"{camel_to_snake_case(method)}.py"]:
+            if module in [
+                    f"{method.lower()}.py", f"{camel_to_snake_case(method)}.py"
+            ]:
                 import_module(f".{module[:-3]}", __package__)
                 children = Optimizer.__subclasses__()
                 for child in children:
                     if child.__name__ == method:
                         optimizer = child()
                         return optimizer
-                raise ValueError((
-                    f"Module `{module}` has been inspected but no proper"
-                    " implementation of `Optimizer` was found there."))
+                raise ValueError(
+                    (f"Module `{module}` has been inspected but no proper"
+                     " implementation of `Optimizer` was found there."))
         raise ValueError(
             f"No suitable Optimizer implementation was found for `{method}`.")
 
@@ -44,10 +45,9 @@ class Optimizer(ABC):
 
     def print_info(self, iteration, xs, value):
         len_xs = len(xs)
-        print((
-            f'\tITERATION NUMBER: {iteration}\n'
-            f'Parameters: {xs}\n'
-            f'Function Value: {value}'))
+        print((f'\tITERATION NUMBER: {iteration}\n'
+               f'Parameters: {xs}\n'
+               f'Function Value: {value}'))
 
     @property
     def minimum_value(self):

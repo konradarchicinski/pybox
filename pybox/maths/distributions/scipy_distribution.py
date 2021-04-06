@@ -18,15 +18,15 @@ class ScipyDistribution(Distribution):
             self._inner = getattr(sys.modules['scipy.stats'], 'nct')
         else:
             try:
-                self._inner = getattr(
-                    sys.modules['scipy.stats'], settings['name'])
+                self._inner = getattr(sys.modules['scipy.stats'],
+                                      settings['name'])
             except AttributeError:
-                raise(('No SciPy distribution with the '
-                       f'`{settings["name"]}` name'))
+                raise (('No SciPy distribution with the '
+                        f'`{settings["name"]}` name'))
 
         if not isinstance(self._inner, stats.rv_continuous):
-            raise((f'Provided distribution called {settings["name"]}'
-                   ' is not implemented.'))
+            raise ((f'Provided distribution called {settings["name"]}'
+                    ' is not implemented.'))
 
         self.parameters = dict()
 

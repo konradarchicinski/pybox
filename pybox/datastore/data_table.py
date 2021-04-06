@@ -9,8 +9,7 @@ from math import ceil, floor
 from tabulate import tabulate
 from tqdm import tqdm
 
-DATA_TYPES = [int, float, complex, bool, str,
-              type(None), date, datetime]
+DATA_TYPES = [int, float, complex, bool, str, type(None), date, datetime]
 
 
 class DataTable:
@@ -36,15 +35,15 @@ class DataTable:
                     self._data_map.append([name, dtype])
             else:
                 raise ValueError(
-                    "If data not supplied, both `names` and `dtypes` must not be none.")
+                    "If data not supplied, both `names` and `dtypes` must not be none."
+                )
         else:
             for column_idx in range(len(self._data[0])):
                 self._data_map.append([
                     names[column_idx],
-                    data_helpers.recognize_type((
-                        self._data[row_idx][column_idx]
-                        for row_idx in range(len(self._data))
-                    ))
+                    data_helpers.recognize_type(
+                        (self._data[row_idx][column_idx]
+                         for row_idx in range(len(self._data))))
                 ])
 
     def __getitem__(self, key):
@@ -52,8 +51,10 @@ class DataTable:
             name, index = key
             return self._data[index][self.column_index(name)]
         elif isinstance(key, str):
-            return [self._data[index][self.column_index(key)]
-                    for index in range(self.length)]
+            return [
+                self._data[index][self.column_index(key)]
+                for index in range(self.length)
+            ]
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
@@ -73,8 +74,7 @@ class DataTable:
                 datatype = data_helpers.recognize_type(value)
                 for index, element in enumerate(value):
                     self._data[index][self.column_index(key)] = (
-                        data_helpers.change_type(element, datatype)
-                    )
+                        data_helpers.change_type(element, datatype))
             else:
                 self._data[0][self.column_index(key)] = value
                 for idx in range(1, self.length):
@@ -124,16 +124,15 @@ class DataTable:
     @property
     def bytesize(self):
         """Returns the approximate memory DataTable footprint."""
-        return data_helpers.byte_size(self._data) + data_helpers.byte_size(self._data_map)
+        return data_helpers.byte_size(self._data) + data_helpers.byte_size(
+            self._data_map)
 
     @property
     def info(self):
         """Return information about shape and bytesize of the DataTable."""
-        info = (
-            "DataTable"
-            f"(shape={self.width}x{self.length},"
-            f"bytesize={self.bytesize})"
-        )
+        info = ("DataTable"
+                f"(shape={self.width}x{self.length},"
+                f"bytesize={self.bytesize})")
         for name, dtype in self.datatypes.items():
             info = "".join([info, "\n", name, ": ", dtype.__name__])
         return info
@@ -154,13 +153,13 @@ class DataTable:
 
         arrow_table = Table.from_arrays(
             [array(column) for column in list(map(list, zip(*self._data)))],
-            names=self.columns
-        )
+            names=self.columns)
         return arrow_table
 
     def rows(self):
         """Returns rows interable which called, displays progress bar."""
-        return (pbdsdtr.DataTableRow(self, row) for row in tqdm(range(self.length)))
+        return (
+            pbdsdtr.DataTableRow(self, row) for row in tqdm(range(self.length)))
 
     def to_parquet(self, file_name, directory):
         """Store `DataTable` in the parquet format file.
@@ -186,18 +185,22 @@ class DataTable:
             lower_bound = ceil(rows_number / 2)
             upper_bound = self.length - floor(rows_number / 2)
 
-            data_subset = [*self._data[:lower_bound],
-                           [None for _ in range(self.width)],
-                           *self._data[upper_bound:]]
-            indices = [*[i for i in range(lower_bound)],
-                       "..",
-                       *[i for i in range(upper_bound, self.length)]]
+            data_subset = [
+                *self._data[:lower_bound], [None for _ in range(self.width)],
+                *self._data[upper_bound:]
+            ]
+            indices = [
+                *[i for i in range(lower_bound)], "..",
+                *[i for i in range(upper_bound, self.length)]
+            ]
 
         return tabulate(data_subset,
                         showindex=indices,
                         tablefmt=text_format,
-                        headers=[f"{name}\nDataType:{dtype.__name__}"
-                                 for (name, dtype) in self._data_map])
+                        headers=[
+                            f"{name}\nDataType:{dtype.__name__}"
+                            for (name, dtype) in self._data_map
+                        ])
 
     def display(self, rows_number=10, display_type=None, string_length=299):
         """Display the contents of the current DataTable in rendered html format.
@@ -215,17 +218,17 @@ class DataTable:
                 if None entire string is printed. Defaults to 299.
         """
         if not display_type:
-            pbdsdth.show_table(
-                self._data, self._data_map, rows_number, string_length)
+            pbdsdth.show_table(self._data, self._data_map, rows_number,
+                               string_length)
         elif display_type.lower() == "random":
-            pbdsdth.show_table_random(
-                self._data, self._data_map, rows_number, string_length)
+            pbdsdth.show_table_random(self._data, self._data_map, rows_number,
+                                      string_length)
         elif display_type.lower() == "head":
-            pbdsdth.show_table_head(
-                self._data, self._data_map, rows_number, string_length)
+            pbdsdth.show_table_head(self._data, self._data_map, rows_number,
+                                    string_length)
         elif display_type.lower() == "tail":
-            pbdsdth.show_table_tail(
-                self._data, self._data_map, rows_number, string_length)
+            pbdsdth.show_table_tail(self._data, self._data_map, rows_number,
+                                    string_length)
 
     def column_index(self, column_name):
         """Return the index number of the specified column.
@@ -257,8 +260,11 @@ class DataTable:
             step = 1
         return range(start, stop, step)
 
-    def insert_column(self, column_name, column_values,
-                      datatype=None, column_index=None):
+    def insert_column(self,
+                      column_name,
+                      column_values,
+                      datatype=None,
+                      column_index=None):
         """Create a new column in the DataTable.
 
         Args:
@@ -281,7 +287,8 @@ class DataTable:
             if datatype not in DATA_TYPES and datatype.__module__ != "numpy":
                 raise ValueError(
                     "Wrong type of data supplied, it must be one of: ",
-                    f"{','.join([str(dtype) for dtype in DATA_TYPES])} or numpy.array.")
+                    f"{','.join([str(dtype) for dtype in DATA_TYPES])} or numpy.array."
+                )
 
         if column_index is None:
             column_index = self.length
@@ -300,7 +307,8 @@ class DataTable:
         """
         data_copy = self.copy
         columns_to_remove = [
-            col for col in self.columns if col not in column_names]
+            col for col in self.columns if col not in column_names
+        ]
         data_copy.remove_columns(columns_to_remove)
         return data_copy
 
@@ -330,8 +338,8 @@ class DataTable:
                 "Supplied row needs to be the same width as DataTable",
                 f", which is {self.width}.")
         for idx, value in enumerate(row_values):
-            row_values[idx] = data_helpers.change_type(
-                value, self._data_map[idx][1])
+            row_values[idx] = data_helpers.change_type(value,
+                                                       self._data_map[idx][1])
 
         if row_index is None:
             row_index = self.length
@@ -360,21 +368,23 @@ class DataTable:
             sort_function (function, optional): function that allows to pass
                 additional commands to the sorter. Defaults to None.
         """
-        other_columns = [column for column, _ in self._data_map
-                         if column not in column_names]
+        other_columns = [
+            column for column, _ in self._data_map if column not in column_names
+        ]
         data_to_sort = []
         new_data_map = []
         for column in column_names + other_columns:
-            data_to_sort.append([self._data[index][self.column_index(column)]
-                                 for index in range(self.length)])
+            data_to_sort.append([
+                self._data[index][self.column_index(column)]
+                for index in range(self.length)
+            ])
             new_data_map.append([column, self.datatypes[column]])
 
         data_to_sort = list(map(list, zip(*data_to_sort)))
         self._data_map = new_data_map
-        self._data = sorted(
-            data_to_sort,
-            key=sort_function,
-            reverse=reverse_order)
+        self._data = sorted(data_to_sort,
+                            key=sort_function,
+                            reverse=reverse_order)
 
     def filter(self, filtering_function, return_filtered_out=False):
         """Filters in place the DataTable rows, removing rows which do not
@@ -416,11 +426,9 @@ class DataTable:
 
         for level in levels:
             level_column_name = "".join([column_name, str(level)])
-            self.insert_column(
-                level_column_name,
-                [None] * self.length,
-                datatype=int,
-                column_index=main_column_index + 1)
+            self.insert_column(level_column_name, [None] * self.length,
+                               datatype=int,
+                               column_index=main_column_index + 1)
             for idx in self.rows_range():
                 if self._data[idx][main_column_index] is None:
                     continue

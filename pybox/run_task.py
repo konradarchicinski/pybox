@@ -10,9 +10,12 @@ import logging
 import importlib.util
 
 
-def run_selected_module(supplied_task_name, inputs_directory=None,
-                        outputs_directory=None, show_task_info=False,
-                        settings=None, settings_path=None):
+def run_selected_module(supplied_task_name,
+                        inputs_directory=None,
+                        outputs_directory=None,
+                        show_task_info=False,
+                        settings=None,
+                        settings_path=None):
     """Function used to execute a task distinguished by a specific name.
 
     Args:
@@ -31,11 +34,13 @@ def run_selected_module(supplied_task_name, inputs_directory=None,
     if settings_path is not None:
         settings = _read_settings_file(settings_path)
 
-    globals_dict = {"INPUTS_DIRECTORY": inputs_directory,
-                    "OUTPUTS_DIRECTORY": outputs_directory,
-                    "SHOW_TASK_INFO": show_task_info,
-                    "SUPPLIED_TASK_NAME": supplied_task_name,
-                    "SETTINGS": settings}
+    globals_dict = {
+        "INPUTS_DIRECTORY": inputs_directory,
+        "OUTPUTS_DIRECTORY": outputs_directory,
+        "SHOW_TASK_INFO": show_task_info,
+        "SUPPLIED_TASK_NAME": supplied_task_name,
+        "SETTINGS": settings
+    }
 
     # Finding all python files which contains application's tasks.
     task_files = list()
@@ -70,8 +75,8 @@ def _read_settings_file(settings_path):
         settings_path (str): directory of settings module to be read. 
     """
     # TODO deprecated, should read YAML file not python module.
-    spec = importlib.util.spec_from_file_location(
-        "task_file_settings", settings_path)
+    spec = importlib.util.spec_from_file_location("task_file_settings",
+                                                  settings_path)
     settings_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(settings_module)
 
@@ -144,9 +149,8 @@ if __name__ == "__main__":
     parser.add_argument("run_task_parameters", type=str)
     parser_arg = parser.parse_args()
 
-    parameters_list = re.split(
-        ''' -(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
-        parser_arg.run_task_parameters)
+    parameters_list = re.split(''' -(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                               parser_arg.run_task_parameters)
 
     task_name = parameters_list[0]
     del parameters_list[0]
