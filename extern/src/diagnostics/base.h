@@ -1,5 +1,5 @@
-#ifndef BASE
-#define BASE
+#ifndef BASE_H
+#define BASE_H
 
 #include <cmath>
 #include <vector>

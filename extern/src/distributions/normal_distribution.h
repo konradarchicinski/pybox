@@ -1,27 +1,23 @@
-#ifndef NORMAL_DISTRIBUTION
-#define NORMAL_DISTRIBUTION
+#ifndef NORMAL_DISTRIBUTION_H
+#define NORMAL_DISTRIBUTION_H
 
 #include "extern/src/distributions/distribution.h"
 
 class NormalDistribution : public Distribution
 {
 public:
+    NormalDistribution(double _mu = 0.0, double _sigma = 1.0);
+    virtual ~NormalDistribution(){};
+
     double mu;
     double sigma;
 
-    NormalDistribution(double _mu = 0.0, double _sigma = 1.0)
-    {
-        mu = _mu;
-        sigma = _sigma;
-    }
-    ~NormalDistribution(){};
+    virtual double pdf(const double &x) const;
+    virtual double cdf(const double &x) const;
+    virtual double ppf(const double &q) const;
 
-    double pdf(double x);
-    double cdf(double x);
-    double ppf(double q);
-
-    double mean();
-    double variance();
+    virtual double mean() const;
+    virtual double variance() const;
 };
 
 #endif

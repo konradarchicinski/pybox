@@ -1,5 +1,5 @@
-#ifndef MERSENNE_TWISTER
-#define MERSENNE_TWISTER
+#ifndef MERSENNE_TWISTER_H
+#define MERSENNE_TWISTER_H
 
 #include <random>
 #include <chrono>
@@ -13,9 +13,9 @@ private:
 public:
     MersenneTwister(double lower_bound = 0.0,
                     double upper_bound = 1.0,
-                    int long seed = std::chrono::system_clock::now()
-                                        .time_since_epoch()
-                                        .count());
+                    int seed = std::chrono::system_clock::now()
+                                   .time_since_epoch()
+                                   .count());
     ~MersenneTwister();
 
     double random_uniform();

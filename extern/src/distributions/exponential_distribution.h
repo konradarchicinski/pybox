@@ -1,27 +1,22 @@
-#ifndef EXPONENTIAL_DISTRIBUTION
-#define EXPONENTIAL_DISTRIBUTION
+#ifndef EXPONENTIAL_DISTRIBUTION_H
+#define EXPONENTIAL_DISTRIBUTION_H
 
 #include "extern/src/distributions/distribution.h"
 
 class ExponentialDistribution : public Distribution
 {
 public:
+    ExponentialDistribution(double _lambda = 1.0);
+    virtual ~ExponentialDistribution(){};
+
     double lambda;
 
-    ExponentialDistribution(double _lambda = 1.0)
-    {
-        left_support = 0.0;
+    virtual double pdf(const double &x) const;
+    virtual double cdf(const double &x) const;
+    virtual double ppf(const double &q) const;
 
-        lambda = _lambda;
-    }
-    ~ExponentialDistribution(){};
-
-    double pdf(double x);
-    double cdf(double x);
-    double ppf(double q);
-
-    double mean();
-    double variance();
+    virtual double mean() const;
+    virtual double variance() const;
 };
 
 #endif

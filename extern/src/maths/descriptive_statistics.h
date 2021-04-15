@@ -1,5 +1,5 @@
-#ifndef DESCRIPTIVE_STATISTICS
-#define DESCRIPTIVE_STATISTICS
+#ifndef DESCRIPTIVE_STATISTICS_H
+#define DESCRIPTIVE_STATISTICS_H
 
 #include <cmath>
 #include <vector>

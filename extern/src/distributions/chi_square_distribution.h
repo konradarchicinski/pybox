@@ -1,29 +1,24 @@
-#ifndef CHI_SQUARE_DISTRIBUTION
-#define CHI_SQUARE_DISTRIBUTION
+#ifndef CHI_SQUARE_DISTRIBUTION_H
+#define CHI_SQUARE_DISTRIBUTION_H
 
 #include "extern/src/distributions/gamma_distribution.h"
 
 class ChiSquareDistribution : public Distribution
 {
-private:
-    GammaDistribution gamma_distribution;
-
 public:
+    ChiSquareDistribution(int _k = 2);
+    virtual ~ChiSquareDistribution(){};
+
     int k;
 
-    ChiSquareDistribution(int _k = 2) : gamma_distribution(_k / 2.0, 2.0)
-    {
-        left_support = 0.0;
+    virtual double pdf(const double &x) const;
+    virtual double cdf(const double &x) const;
 
-        k = _k;
-    }
-    ~ChiSquareDistribution(){};
+    virtual double mean() const;
+    virtual double variance() const;
 
-    double pdf(double x) { return gamma_distribution.pdf(x); }
-    double cdf(double x) { return gamma_distribution.cdf(x); }
-
-    double mean() { return gamma_distribution.mean(); }
-    double variance() { return gamma_distribution.variance(); }
+private:
+    GammaDistribution gamma_distribution;
 };
 
 #endif

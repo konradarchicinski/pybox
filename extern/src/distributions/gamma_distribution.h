@@ -1,28 +1,22 @@
-#ifndef GAMMA_DISTRIBUTION
-#define GAMMA_DISTRIBUTION
+#ifndef GAMMA_DISTRIBUTION_H
+#define GAMMA_DISTRIBUTION_H
 
 #include "extern/src/distributions/distribution.h"
 
 class GammaDistribution : public Distribution
 {
 public:
+    GammaDistribution(double _k = 2.0, double _theta = 1.0);
+    virtual ~GammaDistribution(){};
+
     double k;
     double theta;
 
-    GammaDistribution(double _k = 2.0, double _theta = 1.0)
-    {
-        left_support = 0.0;
+    virtual double pdf(const double &x) const;
+    virtual double cdf(const double &x) const;
 
-        k = _k;
-        theta = _theta;
-    }
-    ~GammaDistribution(){};
-
-    double pdf(double x);
-    double cdf(double x);
-
-    double mean();
-    double variance();
+    virtual double mean() const;
+    virtual double variance() const;
 };
 
 #endif

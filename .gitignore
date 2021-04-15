@@ -21,3 +21,6 @@ ipython_config.py
 
 # notebooks folder
 */notebooks
+
+# Executable
+*.exe
